@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "microcotb"
+version = "0.8.0"
+authors = [
+  { name="Pat Deegan" },
+]
+description = "A cocotb implementation for hardware in the loop and uPython "
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+]
+
+[project.scripts]
+
+[project.urls]
+Homepage = "https://microcotb.org"
+Issues = "https://github.com/psychogenic/microcotb/issues"
