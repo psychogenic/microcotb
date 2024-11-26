@@ -63,7 +63,7 @@ class DUTWrapper:
         self._log = logging.getLogger(name)
         
         
-    def auto_clocking_stop(self):
+    def testing_will_begin(self):
         pass
         
     @classmethod

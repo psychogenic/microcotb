@@ -80,7 +80,7 @@ class Runner:
         from microcotb.time.system import SystemTime
         from microcotb.clock import Clock
         
-        dut.auto_clocking_stop()
+        dut.testing_will_begin()
         
         num_failures = 0
         num_tests = len(self.test_names)
