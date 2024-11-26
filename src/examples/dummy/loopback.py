@@ -50,11 +50,11 @@ class LoopBackCounter(DUT):
         self._output = 0
         
         port_defs = [
-            ('input', 8, self.read_input_byte, self.write_input_byte),
+            ('input',  8, self.read_input_byte, self.write_input_byte),
             ('output', 8, self.read_output_byte, None),
         ]
         for pd in port_defs:
-            setattr(self, pd[0], IO(*pd))
+            self.add_port(*pd)
             
     
     def read_input_byte(self):

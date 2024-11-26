@@ -79,6 +79,9 @@ class DUTWrapper:
         setattr(self, name, slc)
         
         
+    def add_port(self, name:str, width:int, reader_function=None, writer_function=None):
+        setattr(self, name, IO(name, width, reader_function, writer_function))
+        
 class DUT(DUTWrapper):
     
     def __init__(self, name:str='DUT'):
