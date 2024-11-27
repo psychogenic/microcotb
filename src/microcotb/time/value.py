@@ -4,6 +4,7 @@ Created on Nov 23, 2024
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
+
 class TimeConverter:
     UnitScales = {
                 'fs': 1e-15,
@@ -46,12 +47,24 @@ class TimeConverter:
         
     
 class TimeValue:
+    BaseUnits = 'ns'
     def __init__(self, time:int, units:str):
         self._time = time 
         self._units = units
         self.scale = TimeConverter.scale(units)
         self._as_float = None
-    
+        self._store_baseunits()
+        if units != self.BaseUnits and \
+            TimeConverter.UnitScales[units] < TimeConverter.UnitScales[self.BaseUnits]:
+            raise RuntimeError(f'Reduce TimeValue.BaseUnits to {units}')
+        
+    def _store_baseunits(self):
+        if self.units == self.BaseUnits:
+            self._t_baseunits = self.time 
+        else:
+            self._t_baseunits = int(TimeConverter.rescale(self.time, self.units, self.BaseUnits))
+        
+        
     @property 
     def time(self):
         return self._time 
@@ -89,38 +102,28 @@ class TimeValue:
         return self._as_float
     
     def __gt__(self, other):
-        if self._directly_comparable(other):
-            return self.time > other.time 
-        
-        if isinstance(other, (TimeValue, float)):
-            return float(self) > float(other)
-        raise ValueError
+        return self._t_baseunits > other._t_baseunits
     
     def __lt__(self, other):
-        if self._directly_comparable(other):
-            return self.time < other.time 
-        return float(self) < float(other)
-    
+        return self._t_baseunits < other._t_baseunits
     def __le__(self, other):
-        return not (self > other)
+        return self._t_baseunits <= other._t_baseunits
     
     def __ge__(self, other):
-        if self._directly_comparable(other):
-            return self.time >= other.time 
-        return float(self) >= float(other)
+        return self._t_baseunits >= other._t_baseunits
     
     def __eq__(self, other):
-        if self._directly_comparable(other):
-            return self.time == other.time 
-        return float(self) == float(other)
+        return self._t_baseunits == other._t_baseunits
     
     def __iadd__(self, other):
         if self._directly_comparable(other):
             self.time += other.time
+            self._store_baseunits()
             return self
         
         if isinstance(other, TimeValue):
             self.time += TimeConverter.rescale(other.time, other.units, self.units)
+            self._store_baseunits()
             return self
         raise ValueError
     

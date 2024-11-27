@@ -47,7 +47,10 @@ class Timer(Awaitable):
     
     
     def __await__(self):
-        self.run_timer()
+        try:
+            self.run_timer()
+        except StopIteration:
+            pass
         yield
         return self
     

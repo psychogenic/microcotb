@@ -32,8 +32,7 @@ class ClockCycles(Awaitable):
             target_time = SystemTime.current() + (clk.half_period * self.num_transitions)
             time_increment = Clock.get_shortest_event_interval()
             #print(f"Is now {SystemTime.current()}, running until {target_time}, increment is {time_increment}")
-            while SystemTime.current() < target_time:
-                #print("Advancing time")
+            while SystemTime.current() <= target_time:
                 SystemTime.advance(time_increment)
                 
         raise StopIteration
@@ -42,11 +41,10 @@ class ClockCycles(Awaitable):
         return self.next()
     
     def __await__(self):
-        clk = Clock.get(self.signal)
-        if clk is not None:
-            self.cycle_count = 0
-            for _i in range(self.num_cycles):
-                clk.tick()
+        try:
+            self.next()
+        except StopIteration:
+            pass
         yield
         return self
     

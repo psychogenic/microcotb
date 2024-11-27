@@ -68,10 +68,6 @@ class Clock:
         self.next_toggle = next_toggle
         
         self.current_signal_value = 0
-        self.sleep_us = 0
-        half_per_secs = float(self.half_period)
-        if  half_per_secs > 200e-6:
-            self.sleep_us = round(half_per_secs*1e6)
             
         self._toggle_count = 0
         self._period = None 

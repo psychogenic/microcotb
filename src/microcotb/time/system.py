@@ -4,7 +4,7 @@ Created on Nov 23, 2024
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
-from microcotb.time.value import TimeValue
+from microcotb.time.value import TimeValue, TimeConverter
 from microcotb.clock import Clock
 import microcotb.utils.tm as time 
 
@@ -12,13 +12,15 @@ class SystemTimeout(Exception):
     pass
 
 class SystemTime:
-    _global_time = TimeValue(0, 'ns')
-    _min_sleep_time = TimeValue(10, 'us')
+    _global_time = TimeValue(0, TimeValue.BaseUnits)
+    _min_sleep_time = TimeValue(
+                        TimeConverter.rescale(200, 'us', TimeValue.BaseUnits), 
+                        TimeValue.BaseUnits)
     _timeout_setting = None
     
     @classmethod 
     def reset(cls):
-        cls._global_time = TimeValue(0, 'ns')
+        cls._global_time = TimeValue(0, TimeValue.BaseUnits)
         
     @classmethod 
     def current(cls) -> TimeValue:
@@ -47,8 +49,8 @@ class SystemTime:
             raise ValueError
         
         cls._global_time += tstep
-        if cls._min_sleep_time < tstep:
-            time.sleep_us(int(tstep.time_in('us')))
+        #if cls._min_sleep_time < tstep:
+        #    time.sleep_us(int(tstep.time_in('us')))
             
         if cls._timeout_setting is not None:
             if cls._global_time >= cls._timeout_setting:
