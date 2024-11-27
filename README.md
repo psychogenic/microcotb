@@ -223,6 +223,105 @@ will do it's thing.
 
 
 
+## cocotb decorators
+
+### cocotb.test()
+
+The `cocotb.test` decorator will make the decorated function part of the test bench
+
+It can be used without parameters, e.g.
+```
+@cocotb.test()
+async def test_clocking(dut):
+    dut._log.info("Start")
+
+    clock = Clock(dut.clk, 10, units='us')
+    cocotb.start_soon(clock.start())
+    
+    await Timer(100, 'us')
+```
+
+The following parameters are supported:
+
+  * name (str), to override default name
+  
+  * skip (boolean), to skip the test
+  
+  * timeout_time (float) and timeout_unit (str), to support timing out
+  
+  * expect_fail (boolean), when true, passes on exceptions raised (fail otherwise)
+  
+
+An example:
+
+```
+@cocotb.test(name='timing out', timeout_time=100, timeout_unit='us')
+async def test_timeout(dut):
+    clock = Clock(dut.clk, 10, units="us")
+    cocotb.start_soon(clock.start())
+    await Timer(300, 'us')
+```
+
+This test has a timeout set, and awaits too long.  Run like this, the report will show
+
+```
+    FAIL    timing out      Timeout at <TimeValue 100000 ns>
+```
+
+With `expect_fail=True`, you'd get
+
+```
+    PASS    timing out      Failed as expected
+```
+instead.
+
+### cocotb.parametrize()
+
+The equivalent of looping tests with different parameters may be acheived using `cocotb.parametrize`.  
+
+To use this, 
+
+  * augment the test definition with parameters
+  
+  * specify values to use in cocotb.parametrize()
+
+
+With a test like:
+
+```
+@cocotb.test(timeout_time=100, timeout_unit='us')
+@cocotb.parametrize(
+    t=[50, 100, 200],
+    clk_period=[12, 10, 60])
+async def test_timeout(dut, t:int, clk_period:int):
+    clock = Clock(dut.clk, clk_period, units="us")
+    cocotb.start_soon(clock.start())
+    if t >= 200:
+        dut._log.warn(f'Test should FAIL...')
+    else:
+        dut._log.info(f'Test should pass...')
+        
+    await Timer(t, 'us')
+
+```
+
+You'll get a test run for all combinations of parameters (so 3*3 = 9 test runs in this example).
+
+The output will provide the parameters used for each run, like
+
+```
+    PASS    timing out/t=50/clk_period=12
+    PASS    timing out/t=50/clk_period=10
+    PASS    timing out/t=50/clk_period=60
+    PASS    timing out/t=100/clk_period=12
+    PASS    timing out/t=100/clk_period=10
+    PASS    timing out/t=100/clk_period=60
+    FAIL    timing out/t=200/clk_period=12  Timeout at <TimeValue 102000 ns>
+    FAIL    timing out/t=200/clk_period=10  Timeout at <TimeValue 100000 ns>
+    FAIL    timing out/t=200/clk_period=60  Timeout at <TimeValue 120000 ns>
+```
+
+
 ## DUT class
 
 As mentioned, the DUT instance needs to be able to both talk with the hardware behind the scenes and to act like the cocotb dut.

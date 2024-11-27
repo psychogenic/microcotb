@@ -1,4 +1,5 @@
-from .runner import Runner, test
+from .runner import Runner
+from .decorators import test, parametrize
 
 def start_soon(c):
     pass

@@ -167,30 +167,3 @@ class Runner:
         
         
 
-def test(func=None, *,
-    timeout_time: float = None,
-    timeout_unit: str = "step",
-    expect_fail: bool = False,
-    expect_error:Exception = None,
-    skip: bool = False,
-    stage: int = 0,
-    name: str = None):
-    
-    def my_decorator_func(func):
-        runner = Runner.get() 
-        test_name = func.__name__ if name is None else name
-        test_case = TestCase(test_name, func, 
-                                timeout_time,
-                                timeout_unit,
-                                expect_fail,
-                                expect_error,
-                                skip,
-                                stage)
-        
-        def wrapper_func(dut):  
-            test_case.run(dut)
-            
-        runner.add_test(test_case)
-        return wrapper_func
-    
-    return my_decorator_func

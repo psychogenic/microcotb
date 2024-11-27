@@ -94,11 +94,21 @@ async def test_should_fail(dut):
 async def test_will_skip(dut):
     dut._log.info("This should not be output!")
 
-# DISABLED cocotb.test(timeout_time=100, timeout_unit='us', expect_fail=True)
-async def test_timeout(dut):
-    clock = Clock(dut.clk, 10, units="us")
+@cocotb.test(name='timing out', timeout_time=100, timeout_unit='us', expect_fail=False)
+@cocotb.parametrize(
+    t=[50, 100, 200],
+    clk_period=[12, 10, 60])
+async def test_timeout(dut, t:int, clk_period:int):
+    clock = Clock(dut.clk, clk_period, units="us")
     cocotb.start_soon(clock.start())
-    await Timer(200, 'us')
+    if t >= 200:
+        dut._log.warn(f'Test should FAIL...')
+    else:
+        dut._log.info(f'Test should pass...')
+        
+    await Timer(t, 'us')
+    
+
     
 @cocotb.test()
 async def test_timer(dut):
