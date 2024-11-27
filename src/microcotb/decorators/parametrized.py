@@ -4,7 +4,8 @@ Created on Nov 27, 2024
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
-from microcotb.runner import Runner, TestCase
+
+from microcotb.runner import TestCase
 def iter_product(*iterables, repeat=1):
     if repeat < 0:
         raise ValueError('no negative repeats')
@@ -33,7 +34,7 @@ class Parameterized:
         skip: bool = False,
         stage: int = 0,
         ):
-        test_func_name = self.test_function.__qualname__ if name is None else name
+        test_func_name = self.test_function.__name__ if name is None else name
         option_indexes = [range(len(option[1])) for option in self.options]
         for selected_options in iter_product(*option_indexes):
             test_kwargs = {}
@@ -74,67 +75,3 @@ class Parameterized:
                 skip=skip,
                 stage=stage
             )
-
-def parametrize(
-    *options_by_tuple,
-    **options_by_name):
-    
-    for i, option_by_tuple in enumerate(options_by_tuple):
-        if len(option_by_tuple) != 2:
-            raise ValueError(
-                f"Invalid option tuple {i}, expected exactly two fields `(name, values)`"
-            )
-        
-    options = [*options_by_tuple, *options_by_name.items()]
-
-    def wrapper(f) -> Parameterized:
-        return Parameterized(f, options)
-
-    return wrapper
-
-def test(func=None, *,
-    timeout_time: float = None,
-    timeout_unit: str = "step",
-    expect_fail: bool = False,
-    expect_error:Exception = None,
-    skip: bool = False,
-    stage: int = 0,
-    name: str = None):
-    
-    def my_decorator_func(func):
-        runner = Runner.get() 
-        
-        test_name = func.__name__ if name is None else name
-        if isinstance(func, Parameterized):
-            for tf in func.generate_tests(
-                                name=test_name,
-                                timeout_time=timeout_time,
-                                timeout_unit=timeout_unit,
-                                expect_fail=expect_fail,
-                                expect_error=expect_error,
-                                skip=skip,
-                                stage=stage
-                                ):
-                runner.add_test(tf)
-            test_func = func.test_function
-            
-        else:
-            test_case = TestCase(test_name, func, 
-                                timeout_time,
-                                timeout_unit,
-                                expect_fail,
-                                expect_error,
-                                skip,
-                                stage)
-            
-            
-            runner.add_test(test_case)
-            
-            def wrapper_func(dut):  
-                test_case.run(dut)
-                
-            test_func = wrapper_func
-            
-        return test_func
-    
-    return my_decorator_func
