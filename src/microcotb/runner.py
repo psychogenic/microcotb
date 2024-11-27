@@ -48,6 +48,19 @@ class TestCase:
             dut._log.error(exception_as_str(e))
             dut._log.warn("Failure was expected")
             
+    def __repr__(self):
+        rstr = f'<TestCase {self.name}'
+        if self.skip:
+            rstr += ' skip=True' 
+            
+        if self.expect_fail:
+            rstr += ' fail=True'
+            
+        if self.timeout is not None:
+            rstr += f' timeout={self.timeout.time}{self.timeout.units}'
+        
+        return rstr + '>'
+            
 _RunnerSingleton = None 
 class Runner:
     
@@ -143,8 +156,15 @@ class Runner:
                         dut._log.warn(f"\tPASS\t{nm}")
         
         
+    def __len__(self):
+        return len(self.tests_to_run)
+    def __repr__(self):
+        return f'<Runner [{len(self)} Tests]>'
+    
+    def __str__(self):
+        test_strs = list(map(lambda x: f"\t{x}", self.tests_to_run.values()))
+        return f'Runner with {len(self)} test cases:\n' + '\n'.join(test_strs)
         
-
         
 
 def test(func=None, *,
