@@ -51,18 +51,25 @@ class Clock:
         
         half_period = TimeValue(period/2, units)
         
-        # we need next toggle to be just before half period
-        # so we try and convert to smaller units, to keep precision 
-        # and make everything directly comparable
-        hp_smaller_units = half_period.cast_stepdown_units()
-        if hp_smaller_units is not None:
-            half_period = hp_smaller_units
-            next_toggle = TimeValue(half_period.time - 5, half_period.units)
-        else:
-            if half_period.time > 1:
-                next_toggle = TimeValue(half_period.time - 1, half_period.units)
+        
+        if units == TimeValue.BaseUnits:
+            if half_period.time > 2:
+                next_toggle = TimeValue(half_period.time - 2, half_period.units)
             else:
-                next_toggle = half_period
+                next_toggle = TimeValue(half_period.time, half_period.units)
+        else:
+            # we need next toggle to be just before half period
+            # so we try and convert to smaller units, to keep precision 
+            # and make everything directly comparable
+            hp_smaller_units = half_period.cast_stepdown_units()
+            if hp_smaller_units is not None:
+                half_period = hp_smaller_units
+                next_toggle = TimeValue(half_period.time - 5, half_period.units)
+            else:
+                if half_period.time > 1:
+                    next_toggle = TimeValue(half_period.time - 1, half_period.units)
+                else:
+                    next_toggle = half_period
         
         self.half_period = half_period
         self.next_toggle = next_toggle
