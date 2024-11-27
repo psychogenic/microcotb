@@ -132,7 +132,8 @@ class Runner:
                     
                 num_failures += 1
             
-                
+        dut.testing_done()
+        
         if num_failures:
             dut._log.warn(f"{num_failures}/{len(self.test_names)} tests failed")
         else:

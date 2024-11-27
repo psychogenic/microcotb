@@ -66,6 +66,9 @@ class DUTWrapper:
     def testing_will_begin(self):
         pass
         
+    def testing_done(self):
+        pass
+    
     @classmethod
     def new_slice_attribute(cls, source:IO, idx_or_start:int, slice_end:int=None):
         return SliceWrapper(source, idx_or_start, slice_end)
