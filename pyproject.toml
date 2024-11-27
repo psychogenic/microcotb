@@ -2,9 +2,10 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+
 [project]
 name = "microcotb"
-version = "0.8.0"
+version = "0.2.0"
 authors = [
   { name="Pat Deegan" },
 ]
@@ -19,7 +20,14 @@ classifiers = [
 dependencies = [
 ]
 
-[project.scripts]
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["microcotb*"]
+exclude = []
+
 
 [project.urls]
 Homepage = "https://microcotb.org"
