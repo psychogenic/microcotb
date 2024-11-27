@@ -7,9 +7,6 @@ Created on Nov 27, 2024
 
 from .parametrized import Parameterized
 def parametrize(*options_by_tuple, **options_by_name):
-    
-    print(options_by_tuple) 
-    print(options_by_name)
     options = []
     if len(options_by_tuple):
         for i, option_by_tuple in enumerate(options_by_tuple):

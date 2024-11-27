@@ -20,7 +20,6 @@ def test(func=None, *,
         runner = Runner.get() 
         test_name = func.__name__ if name is None else name
         if isinstance(func, Parameterized):
-            print("test() decorator got a parametrized wrappy")
             for tf in func.generate_tests(
                                 name=test_name,
                                 timeout_time=timeout_time,
@@ -30,7 +29,6 @@ def test(func=None, *,
                                 skip=skip,
                                 stage=stage
                                 ):
-                print(str(tf))
                 runner.add_test(tf)
             test_func = func.test_function
             
