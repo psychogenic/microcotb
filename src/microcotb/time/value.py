@@ -115,12 +115,19 @@ class TimeValue:
         return float(self) == float(other)
     
     def __iadd__(self, other):
+        if self._directly_comparable(other):
+            self.time += other.time
+            return self
+        
         if isinstance(other, TimeValue):
             self.time += TimeConverter.rescale(other.time, other.units, self.units)
             return self
         raise ValueError
     
     def __add__(self, other):
+        if self._directly_comparable(other):
+            return TimeValue(self.time + other.time, self.units)
+        
         if isinstance(other, TimeValue):
             new_time = self.time + TimeConverter.rescale(other.time, other.units, self.units)
             return TimeValue(new_time, self.units)
