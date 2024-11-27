@@ -162,7 +162,8 @@ class Runner:
         return f'<Runner [{len(self)} Tests]>'
     
     def __str__(self):
-        test_strs = list(map(lambda x: f"\t{x}", self.tests_to_run.values()))
+        # get strings for each test, in order of appearance
+        test_strs = list(map(lambda x: f"\t{x}", map(lambda nm: self.tests_to_run[nm], self.test_names)))
         return f'Runner with {len(self)} test cases:\n' + '\n'.join(test_strs)
         
         
