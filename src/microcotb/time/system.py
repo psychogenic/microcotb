@@ -46,14 +46,13 @@ class SystemTime:
         else:
             raise ValueError
         
-        if cls._timeout_setting is not None:
-            if cls._global_time > cls._timeout_setting:
-                raise SystemTimeout(f'Timeout at {cls.current()}')
-        
         cls._global_time += tstep
         if cls._min_sleep_time < tstep:
             time.sleep_us(int(tstep.time_in('us')))
-                
+            
+        if cls._timeout_setting is not None:
+            if cls._global_time >= cls._timeout_setting:
+                raise SystemTimeout(f'Timeout at {cls.current()}')
         
         for clk in Clock.all():
             clk.time_is_now(cls._global_time)

@@ -33,7 +33,9 @@ class Timer(Awaitable):
             
             increment_count += 1
             SystemTime.advance(time_increment)
-
+            
+        
+        #print(f"Timer done after {increment_count} increments, target time was {target_time} is now {SystemTime.current()}")
 
                 
     def __iter__(self):
