@@ -8,6 +8,7 @@ Created on Nov 21, 2024
 # from ttboard.ports.io import IO
 from microcotb.ports.io import IO
 import microcotb.log as logging
+from microcotb.testcase import TestCase
 from microcotb.platform import PinWrapper
 
 class NoopSignal:
@@ -64,9 +65,15 @@ class DUTWrapper:
         
         
     def testing_will_begin(self):
+        # override if desired
         pass
         
+    def testing_unit_done(self, test:TestCase):
+        # override if desired
+        pass 
+    
     def testing_done(self):
+        # override if desired
         pass
     
     @classmethod
