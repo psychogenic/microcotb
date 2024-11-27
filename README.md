@@ -321,6 +321,17 @@ The output will provide the parameters used for each run, like
     FAIL    timing out/t=200/clk_period=60  Timeout at <TimeValue 120000 ns>
 ```
 
+You can also use tuples for the parameters, rather than keyword arguments
+
+```
+@cocotb.test(timeout_time=100, timeout_unit='us')
+@cocotb.parametrize(
+    ('t', [50, 100, 200]),
+    ('clk_period', [12, 10, 60])
+)
+```
+
+would be equivalent to the above.
 
 ## DUT class
 
