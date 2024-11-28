@@ -6,7 +6,7 @@ How do you get hardware-in-the-loop with [cocotb](https://cocotb.org)?  This is 
 
 This library will run on an [RP2040](https://www.raspberrypi.com/products/rp2040/) and probably anything that runs [micropython](https://www.micropython.org/).
 
-It will also run on the desktop--but then so will cocotb, so what's the point?  The point is getting a simplified manner of extending things to **talk to real hardware**.
+It will also run on the desktop--but then so will cocotb, so what's the point?  The point is getting a simplified manner of extending things to **talk to real hardware**.  See [simple_usb_bridge](./src/examples/simple_usb_bridge/README.md) for an example of using a USB bridge to an FPGA.
 
 The backend will do whatever you want--run on the RP2040 directly, talk over a serial connection or USB, etc.  Whereas the front end provides a cocotb v2 compatible way to detect and run `@cocotb.test()` units just like you did during simulation.
 
