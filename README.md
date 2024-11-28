@@ -76,11 +76,27 @@ Though not quite as pretty as full cocotb, the tests output logging as usual and
 ![cocotb test run](images/ucocotb-run.png)
 
 
+
+
+
 ## HIL
 
 With [cocotb](https://cocotb.org), you can test your hardware design while interacting with a simulator.  The website mentions that "interfacing with existing infrastructure is easy. Do you want to talk to a golden model in your testbench? Or to real hardware, e.g. an FPGA or a logic analyzer?"
 
-But the solution to getting our ASIC projects into the loop were pretty involved.  Rather than recreate a "simulator" which provides a whole VPI API that cocotb can interact with, this code was developped to instead make bringing in the testbench to the  on the demo boards easy.
+But the solution to getting our ASIC projects into the loop were pretty involved.  Rather than recreate a "simulator" which provides a whole VPI API that cocotb can interact with, this code was developped to instead make bringing in the testbench onto the demo boards easy.
+
+### Speed
+
+[All the examples](https://github.com/TinyTapeout/tt-micropython-firmware/tree/v2.0-dev/src/examples) from the Tiny Tapeout SDK run cocotb tests on the RP2040 and interact with actual projects on the ASICs.  These were ported in from those used during Verilog development of the projects, and remain mostly as-is.
+
+They run successfully but, since we are manually toggling the clock(s) behind the scenes from [micropython](https://micropython.org/) SDK, the cost of one step is pretty expensive.
+
+A "step" has a duration of 1/2 the (fastest) started clock's period, in simulator time.  On the RP2040, in real time this one step winds up consumming about 1.6ms.
+
+So, if the simulation had a 1MHz clock and is waiting on a Timer for 1 ms, that will be 1000 clock cycles, or 2000 times the clock signal is toggled, i.e. steps.  Hence, you'll be waiting on this chunk of simulation to complete for over 3 seconds.
+
+On the desktop, a single step is much faster--on the order of 6us on my machine right now, so the same sim would only take about 13ms.  The bottleneck on desktop will always be the hardware bridge you are interacting with to control and observe the hardware, whether its libiio, SWV, plain old serial or whatever.
+
 
 ## Quickstart
 
