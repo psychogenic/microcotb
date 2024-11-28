@@ -20,13 +20,21 @@ log = logging.getLogger(__name__)
 # 1AAAAV: multi-bit IO address, 5 bits, 32 multi-bit
 # V: value for single bit write, when R==0
 class Signal:
-    def __init__(self, serial_port, name, addr):
+    def __init__(self, serial_port:serial.Serial, name:str, addr:int):
         self.name = name
         self.address = addr
         self.multi_bit = addr & 32
         self._current_value = None
         self._serport = serial_port
+        self._written_to = False
         
+    def reset(self):
+        self._written_to = False
+        
+    @property 
+    def serial(self) -> serial.Serial:
+        return self._serport
+    
     @property 
     def value(self):
         return self.read()
@@ -44,9 +52,10 @@ class Signal:
         else:
             self.write(1)
             
-    def clock(self):
-        self.toggle()
-        self.toggle()
+    def clock(self, num_times:int = 1):
+        for _i in range(num_times):
+            self.toggle()
+            self.toggle()
 
     def read(self):
         cmd = 1<<7 # io rw
@@ -58,10 +67,11 @@ class Signal:
         cmd |= 1 # is a read
         
         # print(f"READ {bin(cmd)}")
-        ser = self._serport
-        ser.write(bytearray([cmd]))
-        time.sleep(0.05)
-        v = ser.read()
+        
+        self.serial.write(bytearray([cmd]))
+        while not self.serial.in_waiting:
+            time.sleep(0.001)
+        v = self.serial.read()
         if len(v):
             self._current_value = int.from_bytes(v, 'big')
             
@@ -69,6 +79,10 @@ class Signal:
     
     
     def write(self, val:int):
+        if self._written_to and val == self._current_value:
+            return 
+        
+        self._written_to = True
         cmd = 1<<7 # io rw
         if self.multi_bit:
             cmd |= self.address << 1
@@ -80,29 +94,45 @@ class Signal:
             send_bytes = bytearray([cmd])
 
         self._current_value = val
-        ser = self._serport
-        ser.write(send_bytes)
+        if self.serial.out_waiting:
+            self.serial.flushOutput()
+        self.serial.write(send_bytes)
 
 class DUT(microcotb.dut.DUT):
-    def __init__(self, serial_port:str=DefaultPort):
-        super().__init__('SUB')
+    def __init__(self, serial_port:str=DefaultPort, name:str='SUB'):
+        super().__init__(name)
         self.port = serial_port 
         self._serial = None 
+        self._added_signals = []
         
     @property 
-    def serial(self):
+    def serial(self) -> serial.Serial:
         if self._serial is None:
             self._serial = serial.Serial(self.port, 115200, timeout=0.5)
-            
         return self._serial
 
     def add_signal(self, name, addr):
-        setattr(self, name, Signal(self.serial, name, addr))
+        s = Signal(self.serial, name, addr)
+        self._added_signals.append(s)
+        setattr(self, name, s)
         
     
     def testing_will_begin(self):
         self.discover()
         
+    
+    def testing_unit_done(self, test:microcotb.dut.TestCase):
+        for s in self._added_signals:
+            s.reset()
+        
+        
+    def dump_state(self):
+        ser = self.serial 
+        ser.write(b'd')
+        time.sleep(1)
+        a = ser.read(500)
+        print(a.decode())
+        return a
         
     def discover(self):
         log.info('SUB DUT performing discovery')
@@ -126,6 +156,9 @@ class DUT(microcotb.dut.DUT):
                 log.info(f'Have signal {nm} at {addr}')
                 self.add_signal(nm, addr)
 
-        
 
+def getDUT(port:str='/dev/ttyACM0'):
+    dut = DUT(port)
+    dut.discover()
+    return dut
 
