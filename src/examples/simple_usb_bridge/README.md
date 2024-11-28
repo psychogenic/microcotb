@@ -8,11 +8,16 @@ Though we are going through a USB serial connection to interact with the hardwar
 
 ### SUB: Simple USB Bridge 
 
-My Simple USB Bridge provides read or write access to
+For this to work, you need an FPGA that includes the testbench (which in turn includes the project) and wraps all that up with a layer that allows listing and r/w access to the signals in the tb.v device under test.
+
+That top layer implements the "Simple USB Bridge" to accept USB serial connections and respond to commands to list, read and write signals.  I have this all running on a lattice up5k at the moment.
+
+
+My Simple USB Bridge protocol is dumb and slow, and more a proof of concept than anything, but it still provides read or write access to
 
   * up to 16 single bit signals, quickly
   
-  * up to 32 multi-bit signals, using a slightly longer transfer for write operations
+  * up to 32 multi-bit signals (limited to 8 bits as it now stands), using a slightly longer transfer for write operations
   
 and allows for automatic signal discovery, meaning the DUT on the FPGA is queried for the list of signals available.
 
@@ -35,8 +40,11 @@ I/O reads will transfer the value, as a raw byte, over USB serial.
 For single bit reads, the value is passed along with the address of the signal in question.
 For multi-bit signals, writes involve sending a second byte with the actual value.
 
+This allows the cocotb testbench to toggle the project clock (and other single-bit signals) with a write of a single byte over USB.
 
 You can see this in operation in the [DUT and Signal](./dut.py) implementation here.
+
+I'll be publishing the FPGA side of this in the near future.
 
 ### Sample
 
