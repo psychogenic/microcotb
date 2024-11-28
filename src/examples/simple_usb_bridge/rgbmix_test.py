@@ -94,12 +94,13 @@ async def test_finishoff(dut):
     await RisingEdge(dut.pwm0_out)
     dut._log.info("now wait for falling clock")
     await FallingEdge(dut.clk)
+    await ClockCycles(dut.clk, 1)
     # pwm should all be on for max_count 
     dut._log.info("Should all be on for max_count")
-    for i in range(max_count): 
-        assert dut.pwm0_out.value == 1
-        assert dut.pwm1_out.value == 1
-        assert dut.pwm2_out.value == 1
+    for i in range(max_count - 1): 
+        assert dut.pwm0_out.value == 1, f"pwm0_out is {dut.pwm0_out.value} on clock {i}"
+        assert dut.pwm1_out.value == 1, f"pwm1_out is {dut.pwm1_out.value} on clock {i}"
+        assert dut.pwm2_out.value == 1, f"pwm2_out is {dut.pwm2_out.value} on clock {i}"
         await ClockCycles(dut.clk, 1)
 
 

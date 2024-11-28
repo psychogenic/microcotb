@@ -40,7 +40,7 @@ You can see this in operation in the [DUT and Signal](./dut.py) implementation h
 
 ### Sample
 
-Running
+With the neptune project under the SUB wrapper on the FPGA, running
 
 ```
 $ time python examples/simple_usb_bridge/tb.py
@@ -90,4 +90,41 @@ real    0m5.588s
 user    0m0.311s
 sys     0m0.221s
 ```
+
+
+There's also a version of [Matt's RGB Mixer](https://github.com/mattvenn/tt06-rgb-mixer/tree/cocotb_hw_in_loop/test) in [rgbmix_test.py](./rgbmix_test.py).
+
+With that testbench on the FPGA, wrapped in the SUB to expose the signals over serial, you can do
+
+```
+
+time python examples/simple_usb_bridge/rgbmix_test.py
+
+```
+
+and get it to complete
+
+```
+
+INFO:RGBMX:let noisy transition finish
+INFO:RGBMX:Done
+WARNING:RGBMX:*** Test 'test_enc2' PASS ***
+INFO:RGBMX:*** Running Test 4/4: test_finishoff ***
+INFO:RGBMX:sync to PWM
+INFO:RGBMX:now wait for falling clock
+INFO:RGBMX:Should all be on for max_count
+ERROR:RGBMX:*** Test 'test_finishoff' FAIL: pwm1_out is 0 on clock 0 ***
+WARNING:RGBMX:1/4 tests failed
+INFO:RGBMX:*** Summary ***
+WARNING:RGBMX:  PASS    test_enc0
+WARNING:RGBMX:  PASS    test_enc1
+WARNING:RGBMX:  PASS    test_enc2
+ERROR:RGBMX:    FAIL    test_finishoff  pwm1_out is 0 on clock 0
+
+real    1m33.930s
+user    0m1.784s
+sys     0m1.455s
+```
+
+Though that last test is failing, for reasons unknown.
 
