@@ -53,7 +53,7 @@ async def test_encoder(dut, e:Encoder, dbg_mode:int):
    
     # do 3 ramps for each encoder 
     dut.debug_mode.value = dbg_mode
-    dut._log.info("run encoder0 test")
+    dut._log.info(f"run encoder{dbg_mode} test")
     await run_encoder_test(dut, e,  max_count)
     
 @cocotb.test()

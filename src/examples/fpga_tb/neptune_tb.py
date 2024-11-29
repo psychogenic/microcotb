@@ -57,6 +57,7 @@ async def startup(dut):
     dut._log.info("starting clock")
     clock = Clock(dut.clk, 500, units="us")
     cocotb.start_soon(clock.start())
+    dut._log.info("resetting")
     await reset(dut)
     dut.input_pulse.value = 0
             
@@ -103,6 +104,7 @@ async def setup_tuner(dut):
 async def note_toggle(dut, freq, delta=0, msg="", toggleTime=1.2):
     dut._log.info(msg)
     await startup(dut)
+    dut._log.info('startup done')
     dispValues = await inputPulsesFor(dut, freq + delta, toggleTime)  
     return dispValues
     
@@ -166,10 +168,11 @@ async def note_a_exact(dut):
     assert dispValues[0] == target_value, f"exact fail {dispValues[0]} != {target_value}"
     dut._log.info("Note A full pass")
 
-def main():
+def main(dut:DUT = None):
     logging.basicConfig(level=logging.DEBUG)
     runner = cocotb.get_runner()
-    dut = DUT()
+    if dut is None:
+        dut = DUT()
     dut._log.info(f"enabled neptune project, will test with {runner}")
     runner.test(dut)
 
