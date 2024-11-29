@@ -9,11 +9,23 @@ from microcotb.types.handle import LogicObject
 
 
 class IO(LogicObject):
+    _IOPORT_COUNT = 0
+    
     def __init__(self, name:str, width:int, read_signal_fn=None, write_signal_fn=None):
         port = IOPort(name, width, read_signal_fn, write_signal_fn)
         super().__init__(port)
         self.port = port
-    
+        self._hashval = None
+        self._ioidx = IO._IOPORT_COUNT
+        IO._IOPORT_COUNT += 1
+        
+        
+    def __hash__(self): 
+        if self._hashval is None:
+            self._hashval = hash(f'{self.port.name}-{self._ioidx}')
+        return self._hashval
+        
+
     @property 
     def is_readable(self):
         return self.port.is_readable 
