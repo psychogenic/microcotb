@@ -42,7 +42,7 @@ For multi-bit signals, writes involve sending a second byte with the actual valu
 
 This allows the cocotb testbench to toggle the project clock (and other single-bit signals) with a write of a single byte over USB.
 
-You can see this in operation in the [DUT and Signal](./dut.py) implementation here.
+You can see this in operation in the [DUT](./dut.py) and [Signal](./signal.py) implementations here.
 
 I'll be publishing the FPGA side of this in the near future.
 
@@ -51,7 +51,7 @@ I'll be publishing the FPGA side of this in the near future.
 With the neptune project under the SUB wrapper on the FPGA, running
 
 ```
-$ time python examples/simple_usb_bridge/tb.py
+$ time python examples/fpga_tb/tb.py
 
 ```
 
@@ -100,7 +100,7 @@ sys     0m0.221s
 ```
 
 
-There's also a version of [Matt's RGB Mixer](https://github.com/mattvenn/tt06-rgb-mixer/tree/cocotb_hw_in_loop/test) in [rgbmix_test.py](./rgbmix_test.py).
+There's also a version of [Matt's RGB Mixer](https://github.com/mattvenn/tt06-rgb-mixer/tree/cocotb_hw_in_loop/test) in [rgbmix_test.py](../fpga_tb/rgbmix_test.py).
 
 With that testbench on the FPGA, wrapped in the SUB to expose the signals over serial, you can do
 
