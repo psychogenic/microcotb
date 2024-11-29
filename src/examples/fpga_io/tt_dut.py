@@ -28,7 +28,7 @@ class TinyTapeoutDUT(sub_dut.DUT):
     '''
      
     def __init__(self, serial_port:str=sub_dut.DefaultPort, 
-                 name:str='FPGA', auto_discover:bool=False):
+                 name:str='FPGA', auto_discover:bool=True):
         super().__init__(serial_port, name, auto_discover)
 
     @property 
