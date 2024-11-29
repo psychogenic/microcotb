@@ -6,104 +6,26 @@ Created on Nov 28, 2024
 '''
 import time
 import serial
+
 DefaultPort = '/dev/ttyACM0'
+
+from examples.simple_usb_bridge.signal import Signal
+from microcotb.ports.io import IO
 
 import microcotb.log as logging
 import microcotb.dut 
 
 log = logging.getLogger(__name__)
 
-# 0bINAAAAVR
-# I == 0: command, I==1 IO
-# N == 1: multi-bit io
-# 0AAAA: single bit IO address, 4 bits, 16 quick singles
-# 1AAAAV: multi-bit IO address, 5 bits, 32 multi-bit
-# V: value for single bit write, when R==0
-class Signal:
-    def __init__(self, serial_port:serial.Serial, name:str, addr:int):
-        self.name = name
-        self.address = addr
-        self.multi_bit = addr & 32
-        self._current_value = None
-        self._serport = serial_port
-        self._written_to = False
-        
-    def reset(self):
-        self._written_to = False
-        
-    @property 
-    def serial(self) -> serial.Serial:
-        return self._serport
-    
-    @property 
-    def value(self):
-        return self.read()
-    
-    @value.setter 
-    def value(self, set_to:int):
-        self.write(set_to)
-        
-        
-    def toggle(self):
-        if self.multi_bit:
-            raise RuntimeError('Cannot toggle multi-bits')
-        if self._current_value:
-            self.write(0)
-        else:
-            self.write(1)
-            
-    def clock(self, num_times:int = 1):
-        for _i in range(num_times):
-            self.toggle()
-            self.toggle()
-
-    def read(self):
-        cmd = 1<<7 # io rw
-        if self.multi_bit:
-            cmd |= self.address << 1
-        else:
-            cmd |= self.address << 2
-            
-        cmd |= 1 # is a read
-        
-        # print(f"READ {bin(cmd)}")
-        
-        self.serial.write(bytearray([cmd]))
-        while not self.serial.in_waiting:
-            time.sleep(0.001)
-        v = self.serial.read()
-        if len(v):
-            self._current_value = int.from_bytes(v, 'big')
-            
-        return self._current_value
-    
-    
-    def write(self, val:int):
-        if self._written_to and val == self._current_value:
-            return 
-        
-        self._written_to = True
-        cmd = 1<<7 # io rw
-        if self.multi_bit:
-            cmd |= self.address << 1
-            send_bytes = bytearray([cmd, val])
-        else:
-            cmd |= self.address << 2
-            if val:
-                cmd |= 1<<1
-            send_bytes = bytearray([cmd])
-
-        self._current_value = val
-        if self.serial.out_waiting:
-            self.serial.flushOutput()
-        self.serial.write(send_bytes)
 
 class DUT(microcotb.dut.DUT):
-    def __init__(self, serial_port:str=DefaultPort, name:str='SUB'):
+    def __init__(self, serial_port:str=DefaultPort, name:str='SUB', auto_discover:bool=False):
         super().__init__(name)
         self.port = serial_port 
         self._serial = None 
         self._added_signals = []
+        if auto_discover:
+            self.discover()
         
     @property 
     def serial(self) -> serial.Serial:
@@ -111,10 +33,31 @@ class DUT(microcotb.dut.DUT):
             self._serial = serial.Serial(self.port, 115200, timeout=0.5)
         return self._serial
 
-    def add_signal(self, name, addr):
-        s = Signal(self.serial, name, addr)
+    def add_signal(self, name, addr, width:int, is_writeable_input:bool=False):
+        s = Signal(self.serial, name, addr, width, is_writeable_input)
         self._added_signals.append(s)
-        setattr(self, name, s)
+        
+        if width is None:
+            # take a guess
+            if s.multi_bit:
+                width = 8
+            else:
+                width = 1
+                
+                
+            
+        def reader():
+            return s.read()
+        
+        def writer(v:int):
+            s.write(v)
+        
+        wrt = None
+        if s.is_writeable:
+            wrt = writer 
+            
+        iop = IO(name, width, reader, wrt)
+        setattr(self, name, iop)
         
     
     def testing_will_begin(self):
@@ -129,7 +72,7 @@ class DUT(microcotb.dut.DUT):
     def dump_state(self):
         ser = self.serial 
         ser.write(b'd')
-        time.sleep(1)
+        time.sleep(0.05)
         a = ser.read(500)
         print(a.decode())
         return a
@@ -152,13 +95,23 @@ class DUT(microcotb.dut.DUT):
             kv = f.split(b':')
             if len(kv) > 1:
                 nm = kv[0].decode()
-                addr = int.from_bytes(kv[1], "big")
-                log.info(f'Have signal {nm} at {addr}')
-                self.add_signal(nm, addr)
+                if len(kv[1]) < 2:
+                    log.error(f"field {nm} has insufficient values in listing {kv[1]}")
+                    continue
+                
+                if len(kv[1]) > 2:
+                    log.warning(f"field {nm} has more bytes than expected in listing {kv[1]}")
+                    
+                addr = kv[1][0]
+                desc = kv[1][1]
+                is_input = True if desc & (1<<7) else False 
+                width = desc & 0x7f
+                log.info(f'Have signal {nm} ({width}) at {addr} (from {kv[1]}) (input: {is_input})')
+                self.add_signal(nm, addr, width, is_input)
 
 
-def getDUT(port:str='/dev/ttyACM0'):
-    dut = DUT(port)
-    dut.discover()
+def getDUT(port:str='/dev/ttyACM0', name:str='SUB'):
+    dut = DUT(port, name, auto_discover=True)
     return dut
+
 
