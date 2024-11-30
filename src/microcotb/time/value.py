@@ -44,6 +44,17 @@ class TimeConverter:
             return None 
         return cls.Units[idx - 1]
     
+    @classmethod 
+    def units_step_up(cls, units:str):
+        try:
+            idx = cls.Units.index(units)
+        except:
+            return None 
+        
+        if idx >= (len(cls.Units) - 1):
+            return None 
+        return cls.Units[idx + 1]
+    
         
     
 class TimeValue:
@@ -138,6 +149,14 @@ class TimeValue:
     
     def __repr__(self):
         return f'<TimeValue {round(self.time)} {self.units}>'
+    
+    def __str__(self):
+        v = TimeValue(self.time, self.units)
+        while v.time >= 1000 and v.time % 1000 == 0:
+            up_units = TimeConverter.units_step_up(v.units)
+            if up_units:
+                v = TimeValue(TimeConverter.rescale(self.time, self.units, up_units), up_units)
+        return f'{round(v.time)}{v.units}'
     
     def __truediv__(self, other):
         if isinstance(other, TimeValue):
