@@ -260,7 +260,7 @@ def main(dut:DUT = None):
     logging.basicConfig(level=logging.DEBUG)
     runner = cocotb.get_runner()
     if dut is None:
-        dut = DUT()
+        dut = DUT('/dev/ttyACM0', 'Neptune', auto_discover=True)
     dut._log.info(f"enabled neptune project, will test with {runner}")
     runner.test(dut)
 
