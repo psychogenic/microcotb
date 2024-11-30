@@ -108,13 +108,19 @@ async def test_timeout(dut, t:int, clk_period:int):
         
     await Timer(t, 'us')
     
+import time
 
-    
 @cocotb.test()
 async def test_timer(dut):
+    clock = Clock(dut.clk, 1, units="us")
+    cocotb.start_soon(clock.start())
+    
+    s = time.time_ns()
     dut._log.info("Doing nothing but waiting 10ms")
-    await Timer(10, units='ms')
+    await Timer(1, units='ms')
+    e = time.time_ns()
     dut._log.info(f"System time is now {get_sim_time('us')}us")
+    dut._log.info(f"Real time delta is {(e - s)/1e6}ms")
     
 def main():
     import microcotb.log as logging
