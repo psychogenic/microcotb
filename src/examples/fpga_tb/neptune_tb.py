@@ -4,6 +4,7 @@ Created on Nov 28, 2024
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
+
 from examples.simple_usb_bridge.dut import DUT
 from microcotb.clock import Clock
 from microcotb.triggers import Timer, ClockCycles # RisingEdge, FallingEdge, Timer, ClockCycles
@@ -33,9 +34,6 @@ displayProx = {
 SegmentMask = 0xFF
 ProxSegMask = 0xFE
 
-    
-        
-# os.environ['COCOTB_RESOLVE_X'] = 'RANDOM'
 async def reset(dut):
     dut._log.info(f"reset(dut)")
     dut.display_single_enable.value = 0
@@ -78,17 +76,11 @@ async def getDisplayValues(dut):
     return displayedValues
     
 async def inputPulsesFor(dut, tunerInputFreqHz:int, inputTimeSecs=0.51):
-    #numPulses = tunerInputFreqHz * inputTimeSecs 
-    #pulsePeriod = 1/tunerInputFreqHz
-    #pulseHalfCycleUs = round(1e6*pulsePeriod/2.0)
-    
-    pulseClock = Clock(dut.input_pulse, 1000*(1.0/tunerInputFreqHz), units='ms')
+    ms_per = (1000.0/tunerInputFreqHz)
+    dut._log.info(f"Starting pulse in clocking at {tunerInputFreqHz} Hz (per: {ms_per}ms)")
+    pulseClock = Clock(dut.input_pulse, ms_per, units='ms')
     cocotb.start_soon(pulseClock.start())
-    # for _pidx in range(math.ceil(numPulses)):
-    #     dut.input_pulse.value = 1
-    #     await Timer(pulseHalfCycleUs, units='us')
-    #     dut.input_pulse.value = 0
-    #     await Timer(pulseHalfCycleUs, units='us')
+
     await Timer(inputTimeSecs, 'sec')
     dispV = await getDisplayValues(dut)
     
@@ -167,6 +159,100 @@ async def note_a_exact(dut):
     target_value =  (displayProx['exact'] & ProxSegMask)
     assert dispValues[0] == target_value, f"exact fail {dispValues[0]} != {target_value}"
     dut._log.info("Note A full pass")
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+async def note_b(dut, delta=0, msg=""):
+    gFreq = 246.5
+    
+    dut._log.info(f"B delta {delta}")
+    dispValues = await note_toggle(dut, freq=gFreq, delta=delta, msg=msg, toggleTime=2);
+    assert dispValues[1] == (displayNotes['B'] & SegmentMask)
+    return dispValues
+    
+
+ 
+
+    
+@cocotb.test()
+async def note_fatE_lowfar(dut):
+    dispValues = await note_e(dut, eFreq=83, delta=-4, msg="fat E low/far")
+    assert (dispValues[0] == (displayProx['lowfar'] & ProxSegMask)) or (dispValues[0] == (displayProx['exact'] & ProxSegMask))
+    
+    
+ 
+@cocotb.test()
+async def note_fatE_exact(dut):
+    dispValues = await note_e(dut, eFreq=83, delta=-1, msg="fat E -1Hz")
+    assert dispValues[0] == (displayProx['exact'] & ProxSegMask)
+    
+@cocotb.test()
+async def note_e_lowclose(dut):
+    dut._log.info("NOTE: delta same as for fat E, but will be close...")
+    dispValues = await note_e(dut, eFreq=330, delta=-7, msg="E exact")
+    assert dispValues[0] == (displayProx['lowclose'] & ProxSegMask) 
+
+
+    
+@cocotb.test()
+async def note_e_exact(dut):
+    dispValues = await note_e(dut, eFreq=330, delta=0, msg="E exact")
+    assert dispValues[0] == (displayProx['exact'] & ProxSegMask) 
+
+    
+
+@cocotb.test()
+async def note_g_lowclose(dut):
+    dispValues = await note_g(dut, delta=-4, msg="G low/close")
+    assert dispValues[0] == (displayProx['lowclose'] & ProxSegMask) 
+   
+
+    
+@cocotb.test()
+async def note_g_lowfar(dut):
+    dispValues = await note_g(dut, delta=-10, msg="G low/far")
+    assert dispValues[0] == (displayProx['lowfar'] & ProxSegMask) 
+    
+     
+
+@cocotb.test()
+async def note_a_highfar(dut):
+    dispValues = await note_a(dut, delta=4, msg="A high/far")
+    assert dispValues[0] == (displayProx['hifar'] & ProxSegMask) 
+   
+
+
+
+@cocotb.test()
+async def note_b_high(dut):
+    dispValues = await note_b(dut, delta=4, msg="B high/close")
+    assert dispValues[0] == (displayProx['hiclose'] & ProxSegMask) 
+ 
+
+
+@cocotb.test()
+async def note_b_exact(dut):
+    dispValues = await note_b(dut, delta=0, msg="B exact")
+    targ_value = (displayProx['exact'] & ProxSegMask)
+    assert dispValues[0] == targ_value, f"got note B but not exact? ({dispValues[0]} != {targ_value})"
+ 
+
+
+@cocotb.test()
+async def success_test(dut):
+    await note_toggle(dut, freq=20, delta=0, msg="just toggling -- end");
+    
+    
+    
+    
 
 def main(dut:DUT = None):
     logging.basicConfig(level=logging.DEBUG)

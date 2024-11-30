@@ -32,6 +32,13 @@ class TinyTapeoutDUT(sub_dut.DUT):
         super().__init__(serial_port, name, auto_discover)
 
     @property 
+    def rst_n(self) -> IO:
+        return self.reset
+    
+    @rst_n.setter 
+    def rst_n(self, v:int):
+        self.reset.value = v
+    @property 
     def ui_in(self) -> IO:
         return self.host
     
@@ -57,6 +64,5 @@ class TinyTapeoutDUT(sub_dut.DUT):
 
     
 def getDUT(port:str='/dev/ttyACM0'):
-    dut = TinyTapeoutDUT(port)
-    dut.discover()
+    dut = TinyTapeoutDUT(port, 'TT', auto_discover=True)
     return dut
