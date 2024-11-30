@@ -14,7 +14,7 @@ How do you get hardware-in-the-loop with [cocotb](https://cocotb.org)?  This is 
 
 This library will run on an [RP2040](https://www.raspberrypi.com/products/rp2040/) and probably anything that runs [micropython](https://www.micropython.org/).
 
-It will also run on the desktop--but then so will cocotb, so what's the point?  The point is getting a simplified manner of extending things to **talk to real hardware**.  See [simple_usb_bridge](./src/examples/simple_usb_bridge/README.md) for an example of using a USB bridge to an FPGA.
+It will also run on the desktop--but then so will cocotb, so what's the point?  The point is getting a simplified manner of extending things to **talk to real hardware**.  See [simple_usb_bridge](https://github.com/psychogenic/microcotb/tree/main/src/examples/simple_usb_bridge/README.md) for an example of using a USB bridge to an FPGA.
 
 The backend will do whatever you want--run on the RP2040 directly, talk over a serial connection or USB, etc.  Whereas the front end provides a cocotb v2 compatible way to detect and run `@cocotb.test()` units just like you did during simulation.
 
@@ -102,14 +102,14 @@ A simple USB bridge was created to run tests on the desktop but control real har
  
  * external chips, wired to an FPGA with a suitable SUB wrapper to translate USB commands to I/O
 
-More details on this in the [SUB section](./src/examples/simple_usb_bridge).
+More details on this in the [SUB section](https://github.com/psychogenic/microcotb/tree/main/src/examples/simple_usb_bridge).
 
 ### Speed
 
 [All the examples](https://github.com/TinyTapeout/tt-micropython-firmware/tree/v2.0-dev/src/examples) from the Tiny Tapeout SDK run cocotb tests on the RP2040 and interact with actual projects on the ASICs.  These were ported in from those used during Verilog development of the projects, and remain mostly as-is.
 
 
-Using the [SUB](./src/examples/simple_usb_bridge), to talk to projects through an FPGA over USB (either within the FPGA or an external chip *through* the FPGA) things are slower than in desktop sim, but still 10x faster than on the RP2040. 
+Using the [SUB](https://github.com/psychogenic/microcotb/tree/main/src/examples/simple_usb_bridge), to talk to projects through an FPGA over USB (either within the FPGA or an external chip *through* the FPGA) things are slower than in desktop sim, but still 10x faster than on the RP2040. 
 
 
 On the Pico, tests run successfully but, since we are manually toggling the clock(s) behind the scenes from [micropython](https://micropython.org/) SDK, the cost of one step is pretty expensive.
@@ -123,6 +123,14 @@ On the desktop, a single step is much faster--on the order of 6us on my machine 
 
 ## Quickstart
 
+### Installation
+
+Get it and use it from github, by cloning or from a release, or on the desktop you can do
+
+```
+pip install microcotb
+```
+
 To get started you need three things:
 
   1) a set of @cocotb.test()
@@ -134,7 +142,7 @@ To get started you need three things:
   4) an instance of the DUT and to call the runner
   
 
-To dive right in can see a [loopback/counter demo](src/examples/dummy/tb.py) you can run right now by doing
+To dive right in can see a [loopback/counter demo](https://github.com/psychogenic/microcotb/tree/main/src/examples/dummy/tb.py) you can run right now by doing
 
 ```
 >>> import examples.dummy as test
