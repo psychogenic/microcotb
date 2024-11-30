@@ -43,7 +43,7 @@ class Runner:
         from microcotb.clock import Clock
         
         dut.testing_will_begin()
-        
+        all_tests_start_s = time.runtime_start()
         num_failures = 0
         num_tests = len(self.test_names)
         #failures = dict()
@@ -63,14 +63,12 @@ class Runner:
                 dut._log.info(f"*** Running Test {test_count+1}/{num_tests}: {nm} ***") 
                 t_start_s = time.runtime_start()
                 test.run(dut)
-                test.real_time = time.runtime_delta_secs(t_start_s)
                 if test.expect_fail: 
                     num_failures += 1
                     dut._log.error(f"*** {nm} expected fail, so PASS ***")
                 else:
                     dut._log.warn(f"*** Test '{nm}' PASS ***")
             except Exception as e:
-                
                 test.failed = True
                 dut._log.error(exception_as_str(e))
                 if len(e.args):
@@ -81,11 +79,14 @@ class Runner:
                         test.failed_msg = e.args[0]
                     
                 num_failures += 1
-            
+                
+            test.real_time = time.runtime_delta_secs(t_start_s)
             test.run_time = SystemTime.current()
             dut.testing_unit_done(test)
             
+        all_tests_runs_time = time.runtime_delta_secs(all_tests_start_s)
         dut.testing_done()
+        
         
         if num_failures:
             dut._log.warn(f"{num_failures}/{len(self.test_names)} tests failed")
@@ -116,7 +117,7 @@ class Runner:
                         dut._log.error(f"\tFAIL\t{nm}{spaces}\t{test.run_time}\t{realtime}\tpassed but expect_fail = True")
                     else:
                         dut._log.warn(f"\tPASS\t{nm}{spaces}\t{test.run_time}\t{realtime}")
-        
+        dut._log.info(f"Real run time: {all_tests_runs_time:.4f}s")
         
     def __len__(self):
         return len(self.tests_to_run)
