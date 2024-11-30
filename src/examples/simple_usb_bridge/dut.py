@@ -32,6 +32,9 @@ class DUT(microcotb.dut.DUT):
     def serial(self) -> serial.Serial:
         if self._serial is None:
             self._serial = serial.Serial(self.port, 115200, timeout=0.5)
+            
+        if not self._serial.is_open:
+            raise RuntimeError(f'Serial {self.port} is not open?')
         return self._serial
 
     def add_signal(self, name, addr, width:int, is_writeable_input:bool=False):
