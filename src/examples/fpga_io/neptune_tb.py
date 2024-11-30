@@ -1,6 +1,10 @@
 '''
 Created on Nov 29, 2024
 
+Adapted from https://github.com/TinyTapeout/tt-micropython-firmware/blob/v2.0-dev/src/examples/tt_um_psychogenic_neptuneproportional/tt_um_psychogenic_neptuneproportional.py
+originally
+https://github.com/psychogenic/tt04-neptune/blob/main/src/test.py
+
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
