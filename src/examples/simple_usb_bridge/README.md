@@ -1,12 +1,12 @@
-## SUB Sample
+# SUB Sample
 
-This sample shows how I ran the [neptune](https://github.com/psychogenic/tt04-neptune/) [testbench](./tb.py)(adapted [from here](https://github.com/psychogenic/tt04-neptune/blob/main/src/test.py)) on an FPGA that includes and exposes [this verilog testbench](https://github.com/psychogenic/tt04-neptune/blob/main/src/tb.v).
+This sample shows how I ran the [neptune](https://github.com/psychogenic/tt04-neptune/) [testbench](../fpga_tb/neptune_tb.py)(adapted [from here](https://github.com/psychogenic/tt04-neptune/blob/main/src/test.py)) on an FPGA that includes and exposes [this verilog testbench](https://github.com/psychogenic/tt04-neptune/blob/main/src/tb.v).
 
 To do this, an FPGA wraps the [tb.v](https://github.com/psychogenic/tt04-neptune/blob/main/src/tb.v) (which in turn includes the [verilog from the actual project](https://github.com/psychogenic/tt04-neptune/blob/main/src/neptune_tinytapeout_propwindow.v)) in a layer that implement the "SUB".
 
 Though we are going through a USB serial connection to interact with the hardware from the desktop, this is actually 10x faster than running under micropython.
 
-### SUB: Simple USB Bridge 
+## SUB: Simple USB Bridge 
 
 For this to work, you need an FPGA that includes the testbench (which in turn includes the project) and wraps all that up with a layer that allows listing and r/w access to the signals in the tb.v device under test.
 
@@ -45,6 +45,53 @@ This allows the cocotb testbench to toggle the project clock (and other single-b
 You can see this in operation in the [DUT](./dut.py) and [Signal](./signal.py) implementations here.
 
 I'll be publishing the FPGA side of this in the near future.
+
+### Listing Signals
+
+The SUB protocol implemented also includes a method of discovering which signals are actually available.
+
+This is implemented as [dut discover()](./dut.py#L82).  By sending a `b'l'` over USB, the SUB will respond with a list of attributes, sending one entry per line.
+
+Each entry has the form
+
+```
+name:DETAILS\n
+Where
+ DETAILS is 2 bytes: ADDRESS and DESCRIPTION
+  ADDRESS: the address to read/write to for the signal (high bit indicates multi-bit)
+  DESCRIPTION:  
+   DESCRIPTION[7] (high bit) is_input: if 1, this can be written to
+   DESCRIPTION[6:0] signal bit width
+```
+
+Calling `discover()` on the DUT implementation or its derivatives will fetch this data and setup attributes accordingly.
+
+
+## DUT implementation
+
+The [dut](./dut.py) class implements a decent base class that may be used as-is.
+
+Each discovered signal has a `.value` that may be used, including with indices and slices assuming its width permits it.
+
+```
+>>> from examples.simple_usb_bridge.dut import *
+>>> dut = DUT('/dev/ttyACM0', name='myDUT',  auto_discover=True)
+>>> dut.host.value
+<LogicArray('00000000', Range(7, 'downto', 0))>
+>>> dut.host.value[4:2] = 0b101
+>>> dut.host.value[4:2]
+<LogicArray('101', Range(4, 'downto', 2))>
+>>> dut.host.value
+<LogicArray('00010100', Range(7, 'downto', 0))>
+>>> dut.clk.value = 1
+>>> dut.clk.value
+<LogicArray('1', Range(0, 'downto', 0))>
+>>> int(dut.clk.value)
+1
+>>> dut.clk.value > 0
+True
+```
+
 
 ### Sample
 

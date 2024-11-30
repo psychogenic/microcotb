@@ -85,11 +85,26 @@ With [cocotb](https://cocotb.org), you can test your hardware design while inter
 
 But the solution to getting our ASIC projects into the loop were pretty involved.  Rather than recreate a "simulator" which provides a whole VPI API that cocotb can interact with, this code was developped to instead make bringing in the testbench onto the demo boards easy.
 
+
+## SUB
+
+A simple USB bridge was created to run tests on the desktop but control real hardware over USB, either
+
+ * projects running on an FPGA, wrapped in a SUB layer to expose the I/O over USB; or
+ 
+ * external chips, wired to an FPGA with a suitable SUB wrapper to translate USB commands to I/O
+
+More details on this in the [SUB section](./src/examples/simple_usb_bridge).
+
 ### Speed
 
 [All the examples](https://github.com/TinyTapeout/tt-micropython-firmware/tree/v2.0-dev/src/examples) from the Tiny Tapeout SDK run cocotb tests on the RP2040 and interact with actual projects on the ASICs.  These were ported in from those used during Verilog development of the projects, and remain mostly as-is.
 
-They run successfully but, since we are manually toggling the clock(s) behind the scenes from [micropython](https://micropython.org/) SDK, the cost of one step is pretty expensive.
+
+Using the [SUB](./src/examples/simple_usb_bridge), to talk to projects through an FPGA over USB (either within the FPGA or an external chip *through* the FPGA) things are slower than in desktop sim, but still 10x faster than on the RP2040. 
+
+
+On the Pico, tests run successfully but, since we are manually toggling the clock(s) behind the scenes from [micropython](https://micropython.org/) SDK, the cost of one step is pretty expensive.
 
 A "step" has a duration of 1/2 the (fastest) started clock's period, in simulator time.  On the RP2040, in real time this one step winds up consumming about 1.6ms.
 
