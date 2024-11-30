@@ -124,5 +124,5 @@ class Clock:
         
     def __repr__(self):
         return f'<Clock {self.period} on {self.signal}>'
-        
-    
+
+
