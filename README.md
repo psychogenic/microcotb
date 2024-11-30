@@ -1,4 +1,4 @@
-# microcotb
+# [microcotb](https://microcotb.org)
 
 Copyright &copy; 2024 Pat Deegan [psychogenic.com](https://psychogenic.com)
 
@@ -81,7 +81,7 @@ This is from the [tiny tapeout factory test design](https://github.com/TinyTapeo
 
 Though not quite as pretty as full cocotb, the tests output logging as usual and provide a summary after the full run
 
-![cocotb test run](images/ucocotb-run.png)
+![cocotb test run](https://raw.githubusercontent.com/psychogenic/microcotb/refs/heads/main/images/ucocotb-run.png)
 
 
 
