@@ -58,6 +58,7 @@ class TimeConverter:
         
     
 class TimeValue:
+    ReBaseStringUnits = False # go up units in str repr
     BaseUnits = 'ns'
     def __init__(self, time:int, units:str):
         self._time = time 
@@ -151,12 +152,15 @@ class TimeValue:
         return f'<TimeValue {round(self.time)} {self.units}>'
     
     def __str__(self):
+        if not self.ReBaseStringUnits:
+            return f'{round(self.time)}{self.units}'
+        
         v = TimeValue(self.time, self.units)
-        while v.time >= 1000 and v.time % 1000 == 0:
+        while v.time >= 1000:
             up_units = TimeConverter.units_step_up(v.units)
             if up_units:
                 v = TimeValue(TimeConverter.rescale(self.time, self.units, up_units), up_units)
-        return f'{round(v.time)}{v.units}'
+        return f'{v.time:.4f}{v.units}'
     
     def __truediv__(self, other):
         if isinstance(other, TimeValue):

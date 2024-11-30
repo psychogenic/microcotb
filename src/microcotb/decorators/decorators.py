@@ -31,7 +31,6 @@ def test(func=None, *,
                                 ):
                 runner.add_test(tf)
             test_func = func.test_function
-            
         else:
             test_case = TestCase(test_name, func, 
                                 timeout_time,

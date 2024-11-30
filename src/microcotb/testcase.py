@@ -33,6 +33,7 @@ class TestCase:
         self.failed = False
         self.failed_msg = ''
         self._run_time = None
+        self.real_time = 0
         
     def run(self, dut):
         if self.skip:

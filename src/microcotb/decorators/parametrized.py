@@ -10,11 +10,10 @@ def iter_product(*iterables, repeat=1):
     if repeat < 0:
         raise ValueError('no negative repeats')
     pools = [tuple(pool) for pool in iterables] * repeat
-
     result = [[]]
     for pool in pools:
         result = [x+[y] for x in result for y in pool]
-
+        
     for prod in result:
         yield tuple(prod)
 
@@ -36,7 +35,7 @@ class Parameterized:
         ):
         test_func_name = self.test_function.__name__ if name is None else name
         option_indexes = [range(len(option[1])) for option in self.options]
-        for selected_options in iter_product(*option_indexes):
+        for selected_options in iter_product(*option_indexes, repeat=1):
             test_kwargs = {}
             test_name_pieces  = [test_func_name]
             for option_idx, select_idx in enumerate(selected_options):

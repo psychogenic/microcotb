@@ -16,3 +16,10 @@ if not Features.SleepMsUs:
 if not Features.TicksUs:
     def ticks_us():
         return int(time())
+    
+def runtime_start():
+    return time()
+
+def runtime_delta_secs(start_time:float):
+    return time() - start_time 
+    

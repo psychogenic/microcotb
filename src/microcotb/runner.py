@@ -8,10 +8,11 @@ Created on Nov 26, 2024
 from microcotb.testcase import TestCase
 from microcotb.dut import DUT
 from microcotb.platform import exception_as_str
+import microcotb.utils.tm as time
     
 _RunnerSingleton = None 
 class Runner:
-    
+    SummaryNameFieldLen = 40
     @classmethod 
     def get(cls):
         global _RunnerSingleton
@@ -60,7 +61,9 @@ class Runner:
             test.failed = False
             try:
                 dut._log.info(f"*** Running Test {test_count+1}/{num_tests}: {nm} ***") 
+                t_start_s = time.runtime_start()
                 test.run(dut)
+                test.real_time = time.runtime_delta_secs(t_start_s)
                 if test.expect_fail: 
                     num_failures += 1
                     dut._log.error(f"*** {nm} expected fail, so PASS ***")
@@ -90,21 +93,29 @@ class Runner:
             dut._log.info(f"All {len(self.test_names)} tests passed")
         
         dut._log.info("*** Summary ***")
+        max_name_len = self.SummaryNameFieldLen
+        dut._log.warning(f"\tresult\t{' '*max_name_len}\tsim time\treal time\terror")
         for nm in self.test_names:
+            
+            if len(nm) < max_name_len:
+                spaces = ' '*(max_name_len - len(nm))
+            else:
+                spaces = ''
             test = self.tests_to_run[nm]
+            realtime = f'{test.real_time:.4f}s'
             if test.failed:
                 if test.expect_fail:
-                    dut._log.warn(f"\tPASS\t{nm}\t{test.run_time}\tFailed as expected {test.failed_msg}")
+                    dut._log.warn(f"\tPASS\t{nm}{spaces}\t{test.run_time}\t{realtime}\tFailed as expected {test.failed_msg}")
                 else:
-                    dut._log.error(f"\tFAIL\t{nm}\t{test.run_time}\t{test.failed_msg}")
+                    dut._log.error(f"\tFAIL\t{nm}{spaces}\t{test.run_time}\t{realtime}\t{test.failed_msg}")
             else:
                 if self.tests_to_run[nm].skip:
-                    dut._log.warn(f"\tSKIP\t{nm}")
+                    dut._log.warn(f"\tSKIP\t{nm}{spaces}\t--")
                 else:
                     if test.expect_fail:
-                        dut._log.error(f"\tFAIL\t{nm}\t{test.run_time}\tpassed but expect_fail = True")
+                        dut._log.error(f"\tFAIL\t{nm}{spaces}\t{test.run_time}\t{realtime}\tpassed but expect_fail = True")
                     else:
-                        dut._log.warn(f"\tPASS\t{nm}\t{test.run_time}")
+                        dut._log.warn(f"\tPASS\t{nm}{spaces}\t{test.run_time}\t{realtime}")
         
         
     def __len__(self):
