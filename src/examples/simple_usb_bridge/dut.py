@@ -74,8 +74,8 @@ class DUT(microcotb.dut.DUT):
     def dump_state(self):
         ser = self.serial 
         ser.write(b'd')
-        time.sleep(0.05)
-        a = ser.read(500)
+        time.sleep(0.06)
+        a = ser.read(1000)
         print(a.decode())
         return a
         
