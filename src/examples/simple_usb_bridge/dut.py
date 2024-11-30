@@ -17,6 +17,33 @@ import microcotb.dut
 
 log = logging.getLogger(__name__)
 
+class SUBIO(IO):
+    '''
+        Derive from IO, mostly to implement our between-test reset() optimization
+    '''
+    def __init__(self, sig:Signal, name:str, width:int, read_signal_fn=None, write_signal_fn=None):
+        super().__init__(name, width, read_signal_fn, write_signal_fn)
+        self._sub_signal = sig
+        
+    
+    def reset(self):
+        self._sub_signal.reset()
+        
+    @property
+    def is_writeable(self) -> bool:
+        return self._sub_signal.is_writeable
+    
+    
+    def toggle(self):
+        if int(self.value):
+            self.value = 1
+        else:
+            self.value = 0
+            
+    def clock(self, num_times:int = 1):
+        for i in range(num_times):
+            self.toggle()
+            self.toggle()
 
 class DUT(microcotb.dut.DUT):
     def __init__(self, serial_port:str=DefaultPort, name:str='SUB', auto_discover:bool=False):
@@ -24,6 +51,7 @@ class DUT(microcotb.dut.DUT):
         self.port = serial_port 
         self._serial = None 
         self._added_signals = dict()
+        self._alias_to_signal = dict()
         
         if auto_discover:
             self.discover()
@@ -37,6 +65,9 @@ class DUT(microcotb.dut.DUT):
             raise RuntimeError(f'Serial {self.port} is not open?')
         return self._serial
 
+    def alias_signal(self, name:str, s:Signal):
+        setattr(self, name, s)
+        self._added_signals[name] = s
     def add_signal(self, name, addr, width:int, is_writeable_input:bool=False):
         s = Signal(self.serial, name, addr, width, is_writeable_input)
         self._added_signals[name] = s
@@ -60,7 +91,7 @@ class DUT(microcotb.dut.DUT):
         if s.is_writeable:
             wrt = writer 
             
-        iop = IO(name, width, reader, wrt)
+        iop = SUBIO(s, name, width, reader, wrt)
         setattr(self, name, iop)
         
     
@@ -113,6 +144,8 @@ class DUT(microcotb.dut.DUT):
                 width = desc & 0x7f
                 log.error(f'Have signal {nm} ({width}) at {addr} (from {kv[1]}) (input: {is_input})')
                 self.add_signal(nm, addr, width, is_input)
+                
+        
                 
     def __setattr__(self, name:str, value):
         if hasattr(self, '_added_signals') and name in self._added_signals \

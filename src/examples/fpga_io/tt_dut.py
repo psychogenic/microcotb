@@ -43,46 +43,43 @@ class TinyTapeoutDUT(sub_dut.DUT):
         #  -- read from uo_out 
         #  -- allow user config of uio, default to inputs
         #  -- write to ui_in
+        
+        aliases = [
+                ('periph1', 'uo_out'),
+                ('periph2', 'uio'),
+                ('host', 'ui_in'),
+                ('reset', 'rst_n'),
+            ]
+        
+        for al in aliases:
+            if hasattr(self, al[0]):
+                self.alias_signal(al[1], getattr(self, al[0]))
+        
+        
         for oeconf in [('periph1', 'uo_out', 0), ('periph2', 'uio', 0), ('host', 'ui_in', 0xff)]:
             oename = f'oe_{oeconf[0]}'
             if hasattr(self, oename):
                 log.debug(f'Have oe port for {oeconf[0]}')
                 oe_port = getattr(self, oename)
-                setattr(self, f'{oeconf[1]}_oe', oe_port)
+                self.alias_signal(f'{oeconf[1]}_oe', oe_port)
                 log.info(f'Setting {oename} to {hex(oeconf[2])}')
                 oe_port.value = oeconf[2]
                 
-    @property 
-    def rst_n(self) -> IO:
-        return self.reset
-    
-    @rst_n.setter 
-    def rst_n(self, v:int):
-        self.reset.value = v
+                
         
-    @property 
-    def ui_in(self) -> IO:
-        return self.host
-    
-    @ui_in.setter 
-    def ui_in(self, v:int):
-        self.host.value = v
-    
+                
     @property 
     def uio_in(self) -> IO:
-        return self.periph2
+        return self.uio
     
     @uio_in.setter 
     def uio_in(self, v:int):
-        self.periph2.value = v
+        self.uio.value = v
         
     @property 
     def uio_out(self) -> IO:
-        return self.periph2
+        return self.uio
     
-    @property 
-    def uo_out(self) -> IO:
-        return self.periph1
 
     
 def getDUT(port:str='/dev/ttyACM0'):
