@@ -9,6 +9,15 @@ import examples.fpga_tb.neptune_tb as neptune_tb
 import examples.fpga_io.tt_dut as tt_dut
 
 class NeptuneDUT(tt_dut.TinyTapeoutDUT):
+    '''
+        Rather than setup neptune-specific signal mappings on the FPGA,
+        doing it here allows a single I/O-through SUB FPGA to work with 
+        *any* tiny tapeout project.
+        
+        So the base class DUT will expose ui_in, uo_out etc for all projects,
+        and here we create named attributes using bits and slices from those
+        standard signals, that are used in the testbench.
+    '''
     def __init__(self, serial_port:str):
         super().__init__(serial_port, 'Neptune', auto_discover=True)
         # inputs
