@@ -1,1 +1,0 @@
-from examples.dummy.tb import main as run

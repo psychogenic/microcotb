@@ -93,11 +93,13 @@ async def test_should_fail(dut):
 @cocotb.test(skip=True)
 async def test_will_skip(dut):
     dut._log.info("This should not be output!")
+    
 
-@cocotb.test(name='timing out', timeout_time=100, timeout_unit='us', expect_fail=False)
+@cocotb.test(name='tmout', timeout_time=100, timeout_unit='us', expect_fail=False)
 @cocotb.parametrize(
-    t=[50, 100, 200],
-    clk_period=[12, 10, 60])
+    ('t', [50, 100, 200]),
+    ('clk_period', [12, 10, 60])
+)
 async def test_timeout(dut, t:int, clk_period:int):
     clock = Clock(dut.clk, clk_period, units="us")
     cocotb.start_soon(clock.start())
@@ -125,8 +127,10 @@ async def test_timer(dut):
 def main():
     import microcotb.log as logging
     logging.basicConfig(level=logging.INFO) 
-    # import examples.tt_um_factory_test.tt_um_factory_test as ft
     from examples.dummy.loopback import LoopBackCounter
+    
+    from microcotb.time.value import TimeValue
+    TimeValue.ReBaseStringUnits = True
     
     class DUT(LoopBackCounter):
         def __init__(self):
@@ -139,6 +143,7 @@ def main():
     dut = DUT()
     dut._log.info("enabled loopback/counter project, running")
     runner = cocotb.get_runner()
+    dut._log.info(f"Runner: {runner}")
     runner.test(dut)
 
 if __name__ == '__main__':

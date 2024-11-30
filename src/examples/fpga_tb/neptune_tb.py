@@ -10,6 +10,7 @@ from microcotb.clock import Clock
 from microcotb.triggers import Timer, ClockCycles # RisingEdge, FallingEdge, Timer, ClockCycles
 import microcotb as cocotb
 import microcotb.log as logging
+from microcotb.time.value import TimeValue
 
 displayNotes = {
             'NA':     0b00000010, # -
@@ -77,7 +78,7 @@ async def getDisplayValues(dut):
     
 async def inputPulsesFor(dut, tunerInputFreqHz:int, inputTimeSecs=0.51):
     ms_per = (1000.0/tunerInputFreqHz)
-    dut._log.info(f"Starting pulse in clocking at {tunerInputFreqHz} Hz (per: {ms_per}ms)")
+    dut._log.info(f"Starting pulse in clocking at {tunerInputFreqHz} Hz (per: {ms_per:.3f}ms)")
     pulseClock = Clock(dut.input_pulse, ms_per, units='ms')
     cocotb.start_soon(pulseClock.start())
 
@@ -174,7 +175,7 @@ async def note_b(dut, delta=0, msg=""):
     gFreq = 246.5
     
     dut._log.info(f"B delta {delta}")
-    dispValues = await note_toggle(dut, freq=gFreq, delta=delta, msg=msg, toggleTime=2);
+    dispValues = await note_toggle(dut, freq=gFreq, delta=delta, msg=msg);
     assert dispValues[1] == (displayNotes['B'] & SegmentMask)
     return dispValues
     
@@ -255,6 +256,7 @@ async def success_test(dut):
     
 
 def main(dut:DUT = None):
+    TimeValue.ReBaseStringUnits = True
     logging.basicConfig(level=logging.DEBUG)
     runner = cocotb.get_runner()
     if dut is None:
