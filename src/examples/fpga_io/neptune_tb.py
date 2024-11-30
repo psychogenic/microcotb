@@ -5,7 +5,7 @@ Created on Nov 29, 2024
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
 import logging
-import examples.simple_usb_bridge.tb as neptune_tb
+import examples.fpga_tb.neptune_tb as neptune_tb
 import examples.fpga_io.tt_dut as tt_dut
 
 class NeptuneDUT(tt_dut.TinyTapeoutDUT):
