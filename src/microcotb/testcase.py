@@ -32,6 +32,7 @@ class TestCase:
         self.stage = stage
         self.failed = False
         self.failed_msg = ''
+        self._run_time = None
         
     def run(self, dut):
         if self.skip:
@@ -46,7 +47,15 @@ class TestCase:
                 raise e
             dut._log.error(exception_as_str(e))
             dut._log.warn("Failure was expected")
-            
+    @property 
+    def run_time(self) -> TimeValue:
+        return self._run_time
+    
+    @run_time.setter 
+    def run_time(self, t:TimeValue):
+        self._run_time = TimeValue(t.time, t.units)
+        
+    
     def __repr__(self):
         rstr = f'<TestCase {self.name}'
         if self.skip:

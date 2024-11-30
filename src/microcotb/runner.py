@@ -51,7 +51,6 @@ class Runner:
             SystemTime.reset()
             Clock.clear_all()
             test = self.tests_to_run[nm]
-            
             if test.timeout is None:
                 SystemTime.clear_timeout()
             else:
@@ -80,6 +79,7 @@ class Runner:
                     
                 num_failures += 1
             
+            test.run_time = SystemTime.current()
             dut.testing_unit_done(test)
             
         dut.testing_done()
@@ -94,17 +94,17 @@ class Runner:
             test = self.tests_to_run[nm]
             if test.failed:
                 if test.expect_fail:
-                    dut._log.warn(f"\tPASS\t{nm}\tFailed as expected {test.failed_msg}")
+                    dut._log.warn(f"\tPASS\t{nm}\t{test.run_time}\tFailed as expected {test.failed_msg}")
                 else:
-                    dut._log.error(f"\tFAIL\t{nm}\t{test.failed_msg}")
+                    dut._log.error(f"\tFAIL\t{nm}\t{test.run_time}\t{test.failed_msg}")
             else:
                 if self.tests_to_run[nm].skip:
                     dut._log.warn(f"\tSKIP\t{nm}")
                 else:
                     if test.expect_fail:
-                        dut._log.error(f"\tFAIL\t{nm}\tpassed but expect_fail = True")
+                        dut._log.error(f"\tFAIL\t{nm}\t{test.run_time}\tpassed but expect_fail = True")
                     else:
-                        dut._log.warn(f"\tPASS\t{nm}")
+                        dut._log.warn(f"\tPASS\t{nm}\t{test.run_time}")
         
         
     def __len__(self):
