@@ -2,7 +2,15 @@
 
 Copyright &copy; 2024 Pat Deegan [psychogenic.com](https://psychogenic.com)
 
-How do you get hardware-in-the-loop with [cocotb](https://cocotb.org)?  This is one, perhaps weird, answer to that: running cocotb tests right in an RP2040, on the [tinytapeout demoboards](https://github.com/TinyTapeout/tt-micropython-firmware).
+How do you get hardware-in-the-loop with [cocotb](https://cocotb.org)?  This is one, perhaps weird, answer to that that allows:
+
+  * running cocotb tests right in an RP2040, on the [tinytapeout demoboards](https://github.com/TinyTapeout/tt-micropython-firmware);
+  
+  * running cocotb tests on the desktop, but talking to projects **on an FPGA** over USB; or
+  
+  * running cocotb tests on the desktop, talking to projects on **any external chip**, through an FPGA over USB
+  
+
 
 This library will run on an [RP2040](https://www.raspberrypi.com/products/rp2040/) and probably anything that runs [micropython](https://www.micropython.org/).
 
