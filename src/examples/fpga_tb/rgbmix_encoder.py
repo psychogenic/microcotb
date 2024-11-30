@@ -1,3 +1,8 @@
+'''
+Adapted from https://github.com/mattvenn/tt06-rgb-mixer/tree/main/test
+by Matt Venn
+'''
+
 from microcotb.triggers import RisingEdge, FallingEdge, ClockCycles
 import random
 class Encoder():

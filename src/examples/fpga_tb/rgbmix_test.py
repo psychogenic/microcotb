@@ -1,8 +1,11 @@
-
+'''
+Adapted from https://github.com/mattvenn/tt06-rgb-mixer/tree/main/test
+by Matt Venn
+'''
 import microcotb as cocotb
 from microcotb.clock import Clock
 from microcotb.triggers import RisingEdge, FallingEdge, ClockCycles
-from examples.simple_usb_bridge.rgbmix_encoder import Encoder
+from examples.fpga_tb.rgbmix_encoder import Encoder
 
 clocks_per_phase = 10
 max_count = 255
