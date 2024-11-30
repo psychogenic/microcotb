@@ -13,6 +13,38 @@ For this to work, you need an FPGA that includes the testbench (which in turn in
 That top layer implements the "Simple USB Bridge" to accept USB serial connections and respond to commands to list, read and write signals.  I have this all running on a lattice up5k at the moment.
 
 
+
+## DUT implementation
+
+The [dut](./dut.py) class implements a decent base class that may also be used as-is.
+
+Each discovered signal has a `.value` that may be used, including with indices and slices assuming its width permits it.
+
+Read and writes to a dut signal's `.value` and transparently transported over serial to the SUB layer on an FPGA.
+
+### example REPL interaction
+
+```
+>>> from examples.simple_usb_bridge.dut import *
+>>> dut = DUT('/dev/ttyACM0', name='myDUT',  auto_discover=True)
+>>> dut.host.value
+<LogicArray('00000000', Range(7, 'downto', 0))>
+>>> dut.host.value[4:2] = 0b101
+>>> dut.host.value[4:2]
+<LogicArray('101', Range(4, 'downto', 2))>
+>>> dut.host.value
+<LogicArray('00010100', Range(7, 'downto', 0))>
+>>> dut.clk.value = 1
+>>> dut.clk.value
+<LogicArray('1', Range(0, 'downto', 0))>
+>>> int(dut.clk.value)
+1
+>>> dut.clk.value > 0
+True
+```
+
+## SUB Protocol
+
 My Simple USB Bridge protocol is dumb and slow, and more a proof of concept than anything, but it still provides read or write access to
 
   * up to 16 single bit signals, quickly
@@ -67,33 +99,12 @@ Where
 Calling `discover()` on the DUT implementation or its derivatives will fetch this data and setup attributes accordingly.
 
 
-## DUT implementation
 
-The [dut](./dut.py) class implements a decent base class that may be used as-is.
+## Samples
 
-Each discovered signal has a `.value` that may be used, including with indices and slices assuming its width permits it.
+See [fpga_tb](../fpga_tb/) for an example of talking to an FPGA that wraps a project/testbench module with a SUB layer to expose the signals over USB.
 
-```
->>> from examples.simple_usb_bridge.dut import *
->>> dut = DUT('/dev/ttyACM0', name='myDUT',  auto_discover=True)
->>> dut.host.value
-<LogicArray('00000000', Range(7, 'downto', 0))>
->>> dut.host.value[4:2] = 0b101
->>> dut.host.value[4:2]
-<LogicArray('101', Range(4, 'downto', 2))>
->>> dut.host.value
-<LogicArray('00010100', Range(7, 'downto', 0))>
->>> dut.clk.value = 1
->>> dut.clk.value
-<LogicArray('1', Range(0, 'downto', 0))>
->>> int(dut.clk.value)
-1
->>> dut.clk.value > 0
-True
-```
-
-
-### Sample
+See [fpga_io](../fgpa_io/) for an example of talking *through* an FPGA, to control its I/O and run tests on any external chip.
 
 With the neptune project under the SUB wrapper on the FPGA, running
 
