@@ -5,6 +5,7 @@ Created on Nov 29, 2024
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
 import time
+import serial
 
 class Signal:
     '''
