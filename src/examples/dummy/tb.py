@@ -126,7 +126,7 @@ def main():
     import microcotb.log as logging
     logging.basicConfig(level=logging.INFO) 
     # import examples.tt_um_factory_test.tt_um_factory_test as ft
-    from .loopback import LoopBackCounter
+    from examples.dummy.loopback import LoopBackCounter
     
     class DUT(LoopBackCounter):
         def __init__(self):
