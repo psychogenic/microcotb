@@ -1,6 +1,7 @@
 '''
 Created on Oct 28, 2023
 
+Adapted from https://github.com/psychogenic/tt05-shaman/blob/main/src/test.py
 @author: Pat Deegan
 @copyright: Copyright (C) 2023 Pat Deegan, https://psychogenic.com
 '''
@@ -605,8 +606,6 @@ class ShamanDUT(tt_dut.TinyTapeoutDUT):
         self.processingReceivedDataBlock = self.new_bit_attribute(self.uio_out, 5)
         self.start = self.new_bit_attribute(self.uio_in, 6)
         self.clockinData = self.new_bit_attribute(self.uio_in, 7)
-        
-        self.uio_oe = self.oe_periph2
         
         self.oe_bidir_setting = 0b11001100
         
