@@ -23,7 +23,8 @@ class DUT(microcotb.dut.DUT):
         super().__init__(name)
         self.port = serial_port 
         self._serial = None 
-        self._added_signals = []
+        self._added_signals = dict()
+        
         if auto_discover:
             self.discover()
         
@@ -35,7 +36,7 @@ class DUT(microcotb.dut.DUT):
 
     def add_signal(self, name, addr, width:int, is_writeable_input:bool=False):
         s = Signal(self.serial, name, addr, width, is_writeable_input)
-        self._added_signals.append(s)
+        self._added_signals[name] = s
         
         if width is None:
             # take a guess
@@ -61,11 +62,12 @@ class DUT(microcotb.dut.DUT):
         
     
     def testing_will_begin(self):
-        self.discover()
+        # use auto-discover instead self.discover()
+        super().testing_will_begin()
         
     
     def testing_unit_done(self, test:microcotb.dut.TestCase):
-        for s in self._added_signals:
+        for s in self._added_signals.values():
             s.reset()
         
         
@@ -106,8 +108,18 @@ class DUT(microcotb.dut.DUT):
                 desc = kv[1][1]
                 is_input = True if desc & (1<<7) else False 
                 width = desc & 0x7f
-                log.info(f'Have signal {nm} ({width}) at {addr} (from {kv[1]}) (input: {is_input})')
+                log.error(f'Have signal {nm} ({width}) at {addr} (from {kv[1]}) (input: {is_input})')
                 self.add_signal(nm, addr, width, is_input)
+                
+    def __setattr__(self, name:str, value):
+        if hasattr(self, '_added_signals') and name in self._added_signals \
+            and isinstance(value, int):
+            self._added_signals[name].value = value
+            return 
+        
+        super().__setattr__(name, value)
+            
+        
 
 
 def getDUT(port:str='/dev/ttyACM0', name:str='SUB'):
