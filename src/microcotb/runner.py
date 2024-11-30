@@ -94,7 +94,7 @@ class Runner:
         
         dut._log.info("*** Summary ***")
         max_name_len = self.SummaryNameFieldLen
-        dut._log.warning(f"\tresult\t{' '*max_name_len}\tsim time\treal time\terror")
+        dut._log.warn(f"\tresult\t{' '*max_name_len}\tsim time\treal time\terror")
         for nm in self.test_names:
             
             if len(nm) < max_name_len:
