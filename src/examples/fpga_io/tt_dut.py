@@ -14,7 +14,10 @@ import microcotb.log as logging
 
 log = logging.getLogger(__name__)
 
-
+class NoopSignal:
+    def __init__(self, name:str):
+        self.name = name 
+        self.value = 0
 
 class TinyTapeoutDUT(sub_dut.DUT):
     '''
@@ -32,9 +35,12 @@ class TinyTapeoutDUT(sub_dut.DUT):
     '''
      
     def __init__(self, serial_port:str=sub_dut.DefaultPort, 
-                 name:str='FPGA', auto_discover:bool=True):
+                 name:str='FPGA', auto_discover:bool=True,
+                 start_readonly:bool=False):
+        self.start_readonly = start_readonly
         super().__init__(serial_port, name, auto_discover)
-
+        self.ena = NoopSignal('ena')
+        
     def discover(self):
         super().discover()
         # TT ports are named according to the ASIC's 
@@ -55,8 +61,11 @@ class TinyTapeoutDUT(sub_dut.DUT):
             if hasattr(self, al[0]):
                 self.alias_signal(al[1], getattr(self, al[0]))
         
-        
-        for oeconf in [('periph1', 'uo_out', 0), ('periph2', 'uio', 0), ('host', 'ui_in', 0xff)]:
+        if self.start_readonly:
+            ui_in_oe_set = 0
+        else:
+            ui_in_oe_set = 0xff
+        for oeconf in [('periph1', 'uo_out', 0), ('periph2', 'uio', 0), ('host', 'ui_in', ui_in_oe_set)]:
             oename = f'oe_{oeconf[0]}'
             if hasattr(self, oename):
                 log.debug(f'Have oe port for {oeconf[0]}')
@@ -82,6 +91,6 @@ class TinyTapeoutDUT(sub_dut.DUT):
     
 
     
-def getDUT(port:str='/dev/ttyACM0'):
-    dut = TinyTapeoutDUT(port, 'TT', auto_discover=True)
+def getDUT(port:str='/dev/ttyACM0', start_readonly:bool=False):
+    dut = TinyTapeoutDUT(port, 'TT', auto_discover=True, start_readonly=start_readonly)
     return dut

@@ -76,7 +76,8 @@ class TimeValue:
         else:
             self._t_baseunits = int(TimeConverter.rescale(self.time, self.units, self.BaseUnits))
         
-        
+    def clone(self):
+        return TimeValue(self.time, self.units)
     @property 
     def time(self):
         return self._time 

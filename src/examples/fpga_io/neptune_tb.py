@@ -37,6 +37,7 @@ class NeptuneDUT(tt_dut.TinyTapeoutDUT):
 def main(serial_port='/dev/ttyACM0'):
     logging.basicConfig(level=logging.DEBUG)
     dut = NeptuneDUT(serial_port)
+    dut.write_test_vcds_to_dir = '/tmp'
     neptune_tb.main(dut)
     
 if __name__ == '__main__':
