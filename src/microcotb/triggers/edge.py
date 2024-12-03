@@ -8,15 +8,15 @@ from microcotb.triggers.awaitable import Awaitable
 from microcotb.clock import Clock
 from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
-
 class Edge(Awaitable):
+    DebugTraceLoopCount = 2000
     def __init__(self, signal):
         super().__init__()
         self.signal = signal
         self._fastest_clock = None 
         self.initial_state = None
         self.primed = False
-        
+        self._cond_check_count = 0
         
     @property 
     def signal_value(self):
@@ -41,22 +41,32 @@ class Edge(Awaitable):
     
     def wait_for_conditions(self):
         while not self.conditions_met():
+            self._cond_check_count += 1
+            if self.DebugTraceLoopCount is not None and \
+                self._cond_check_count % self.DebugTraceLoopCount == 0:
+                self.logger.info(f"SystemTime {SystemTime.current()}")
             SystemTime.advance(self.time_increment)
             
+            
+        if self.DebugTraceLoopCount is not None:
+            self.logger.info(f"Done at {SystemTime.current()}")
         return
     
     
     def __iter__(self):
+        self._cond_check_count = 0
         self._fastest_clock = None 
         self.prepare_for_wait()
         return self
     
     def __next__(self):
+        self._cond_check_count = 0
         self.wait_for_conditions()
         raise StopIteration
     
     
     def __await__(self):
+        self._cond_check_count = 0
         self._fastest_clock = None 
         self.prepare_for_wait()
         self.wait_for_conditions()
@@ -76,14 +86,19 @@ class RisingEdge(Edge):
     
     def conditions_met(self):
         if self.primed:
-            if self.signal_value:
+            sval = self.signal_value
+            if sval:
+                # print(f"SIG VAL TRUE {sval}")
                 return True
         else:
             if self.signal_value == 0:
+                # print("PRIMED")
                 self.primed = True 
             
             
-        
+    
+    def __str__(self):
+        return f'RisingEdge'
 
 class FallingEdge(Edge):
     def __init__(self, signal):
@@ -103,6 +118,8 @@ class FallingEdge(Edge):
                 self.primed = True
             
             
+    def __str__(self):
+        return f'FallingEdge'
         
         
         
