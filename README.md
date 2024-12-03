@@ -16,7 +16,7 @@ This library will run on an [RP2040](https://www.raspberrypi.com/products/rp2040
 
 It will also run on the desktop--but then so will cocotb, so what's the point?  The point is getting a simplified manner of extending things to **talk to real hardware**.  See [simple_usb_bridge](https://github.com/psychogenic/microcotb/tree/main/src/examples/simple_usb_bridge/README.md) for an example of using a USB bridge to an FPGA.
 
-I've used this to get deep inspection VCD waveforms from modules in FPGAs while they run tests while interact with 3rd party hardware, like the SPI flash being read here
+I've used this to get deep inspection VCD waveforms from modules in FPGAs while they run tests and actually interact with external 3rd party hardware, like the SPI flash being read here
 
 ![VCD of SPI flash FIFO](https://raw.githubusercontent.com/psychogenic/microcotb/refs/heads/main/images/psyreader_vcd_from_fpga.png)
 
