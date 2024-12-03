@@ -4,7 +4,7 @@ Copyright &copy; 2024 Pat Deegan [psychogenic.com](https://psychogenic.com)
 
 How do you get hardware-in-the-loop with [cocotb](https://cocotb.org)?  This is one, perhaps weird, answer to that that allows:
 
-  * running cocotb tests right in an RP2040, on the [tinytapeout demoboards](https://github.com/TinyTapeout/tt-micropython-firmware);
+  * running cocotb tests right in an RP2040, on the [tinytapeout demoboards](https://github.com/TinyTapeout/tt-micropython-firmware), or any microcontroller that can do [micropython](https://micropython.org/);
   
   * running cocotb tests on the desktop, but talking to projects **on an FPGA** over USB; or
   
@@ -12,11 +12,16 @@ How do you get hardware-in-the-loop with [cocotb](https://cocotb.org)?  This is 
   
 
 
-This library will run on an [RP2040](https://www.raspberrypi.com/products/rp2040/) and probably anything that runs [micropython](https://www.micropython.org/).
+This library will run on an [RP2040](https://www.raspberrypi.com/products/rp2040/) and really anything that runs [micropython](https://www.micropython.org/).
 
 It will also run on the desktop--but then so will cocotb, so what's the point?  The point is getting a simplified manner of extending things to **talk to real hardware**.  See [simple_usb_bridge](https://github.com/psychogenic/microcotb/tree/main/src/examples/simple_usb_bridge/README.md) for an example of using a USB bridge to an FPGA.
 
-The backend will do whatever you want--run on the RP2040 directly, talk over a serial connection or USB, etc.  Whereas the front end provides a cocotb v2 compatible way to detect and run `@cocotb.test()` units just like you did during simulation.
+I've used this to get deep inspection VCD waveforms from modules in FPGAs while they run tests while interact with 3rd party hardware, like the SPI flash being read here
+
+![VCD of SPI flash FIFO](https://raw.githubusercontent.com/psychogenic/microcotb/refs/heads/main/images/psyreader_vcd_from_fpga.png)
+
+
+The backend will do whatever you want--run on the RP2040 directly, or talk over a serial connection or USB or ethernet, etc.  Whereas the front end provides a cocotb v2 compatible way to detect and run `@cocotb.test()` units just like you did during simulation, *without modifying them*.
 
 You can 
 
@@ -28,7 +33,8 @@ You can
   
 and do most of the usual cocotb things.
 
-One thing it **cannot** do is inspect _internals_ of the DUT, at least not without a lot of help.  In the TinyTapeout case, we only have access to the device as a black box, through the I/O it provides, so unless your bridge to the underlying hardware has some facilities for that it's going to be a blackbox.
+One thing it **cannot** do is inspect _internals_ of the DUT, at least not without some help.  In the TinyTapeout case, we only have access to the device as a black box, through the I/O it provides, so unless your bridge to the underlying hardware has some facilities for that it's going to be a blackbox.
+
 
 For example
 
@@ -473,6 +479,11 @@ Using that class to construct my dut, things like
 
 will justwork(tm) in the tests.
      
+
+## More Info
+
+
+More info and some demonstrations coming shortly, keep an eye out here and on [my youtube channel](https://www.youtube.com/@PsychogenicTechnologies).
 
 
 ## License

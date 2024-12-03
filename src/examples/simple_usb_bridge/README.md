@@ -84,10 +84,10 @@ The SUB protocol implemented also includes a method of discovering which signals
 
 This is implemented as [dut discover()](./dut.py#L82).  By sending a `b'l'` over USB, the SUB will respond with a list of attributes, sending one entry per line.
 
-Each entry has the form
+Each entry is separated by `|` and has the form
 
 ```
-name:DETAILS\n
+name~DETAILS
 Where
  DETAILS is 2 bytes: ADDRESS and DESCRIPTION
   ADDRESS: the address to read/write to for the signal (high bit indicates multi-bit)
@@ -98,13 +98,41 @@ Where
 
 Calling `discover()` on the DUT implementation or its derivatives will fetch this data and setup attributes accordingly.
 
+### Value Change Notifications
+
+Changes may occur on the DUT side to values, pretty much any time.  If monitoring is activated, these changes will be sent over using a simple protocol where `b'm'` indicates the start of a monitoring packet, followed by
+
+```
+  STARTBYTE [PAYLOADBYTE]
+    STARTBYTE is either
+       * SINGLEBITVALUE;
+       * MULTIBIT_ADDRESS; or
+       * END_OF_STREAM.
+    SINGLEBITVALUE is a combo address and value for a single-bit signal.
+    SINGLEBITVALUE is comprised of the new value in the MSB and the 
+                 signal address is the [3:0] LSB, where the two, 
+                 so  V000AAAA
+                 
+    MULTIBIT_ADDRESS is the address of a wide signal.  It is always followed
+    by a PAYLOADBYTE.
+    MULTIBIT_ADDRESS will always be >= 32, ie.
+    0b100000, so its address always has the form
+    001AAAAA.  These address require a 2nd byte, the new VALUE.
+    
+    END_OF_STREAM is simply 0xff
+```
+
+The SerialStream and SUBStateChangeReport collaborate to manage the asynchronous events coming in, such that complete VCD files can be produced.
+ 
+  
+
 
 
 ## Samples
 
-See [fpga_tb](../fpga_tb/) for an example of talking to an FPGA that wraps a project/testbench module with a SUB layer to expose the signals over USB.
+See [fpga_tb](../fpga_tb/) for examples of talking to an FPGA that wraps a project/testbench module with a SUB layer to expose the signals over USB.  Cool thing about this is being able to expose state deep within submodules to inspection, VCD dumps etc.
 
-See [fpga_io](../fgpa_io/) for an example of talking *through* an FPGA, to control its I/O and run tests on any external chip.
+See [fpga_io](../fgpa_io/) for an example of talking *through* an FPGA, to control its I/O and run tests on any external chip.  The advantage there is that its completely hardware agnostic--you can test anything you can wire the FPGA bridge to.
 
 With the neptune project under the SUB wrapper on the FPGA, running
 
@@ -193,4 +221,5 @@ sys     0m1.455s
 ```
 
 Though that last test is failing, for reasons unknown.
+
 
