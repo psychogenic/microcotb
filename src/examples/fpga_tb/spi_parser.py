@@ -10,9 +10,29 @@ from microcotb.triggers import ClockCycles
 import microcotb as cocotb
 import microcotb.log as logging
 from microcotb.time.value import TimeValue
-from microcotb.triggers.edge import RisingEdge
+from microcotb.triggers.edge import RisingEdge, FallingEdge
+
+from microcotb.utils import get_sim_time
 
 from examples.simple_usb_bridge.dut_sub import DUT, DefaultPort
+
+async def reset_and_enable(dut, reset_hold_time:int=50):
+    
+    # startup disabled
+    dut.start_address.value = 0 # beginning of flash
+    dut.enable.value = 0
+    dut.rst.value = 1
+    await ClockCycles(dut.clk, reset_hold_time)
+    dut.rst.value = 0
+    await ClockCycles(dut.clk, reset_hold_time)
+    
+    # enable
+    dut.enable.value = 1
+    await ClockCycles(dut.clk, 2)
+    # we should startup without a valid value
+    assert dut.value_valid.value == 0, "Valid value already asserted"
+    
+    
 
 async def ack_register_rcvd(dut):
     
@@ -23,30 +43,47 @@ async def ack_register_rcvd(dut):
     await ClockCycles(dut.clk, 1)
     dut.register_processed.value = 0
     await ClockCycles(dut.clk, 1)
+
+@cocotb.test(timeout_time=40, timeout_unit='ms')
+async def test_firstvalid_time(dut):
+    clock = Clock(dut.clk, 10, units="us")
+    cocotb.start_soon(clock.start())
+    
+    await reset_and_enable(dut)
+    
+    assert dut.fresh_sample.value == 0, "Already had a fresh sample??"
+    
+    dut._log.info("Waiting on fresh_sample, first one takes a while...")
+    await RisingEdge(dut.fresh_sample)
+    dut._log.info("now wait on value_valid...")
+    await RisingEdge(dut.value_valid)
+    t_now = get_sim_time('ms')
+    assert t_now < 20, f"Took too long {t_now}ms to get first valid"
+    
+    await ClockCycles(dut.clk, 10)
+    
+    dut._log.info("Testing reset...")
+    await reset_and_enable(dut)
+    
+    assert dut.fresh_sample.value == 0, "still have fresh sample?"
+    assert dut.value_valid.value == 0, "still have validu valid?"
+    
+    await RisingEdge(dut.value_valid)
     
     
 @cocotb.test(timeout_time=300, timeout_unit='ms')
 async def test_parse(dut):
     
-    num_samples = 35 # number of registers to fetch
+    num_samples = 40 # number of registers to fetch
     
     clock = Clock(dut.clk, 10, units="us")
     cocotb.start_soon(clock.start())
     
-    # startup disabled
-    dut.start_address.value = 0 # beginning of flash
-    dut.enable.value = 0
-    await ClockCycles(dut.clk, 10)
-    
-    # enable
-    dut.enable.value = 1
-    await ClockCycles(dut.clk, 2)
-    # we should startup without a valid value
-    assert dut.value_valid.value == 0, "Valid value already asserted"
+    await reset_and_enable(dut)
     
     # now it'll read in the file header
-    dut._log.info("Waiting on value_valid, first one takes a while...")
-    await RisingEdge(dut.value_valid)
+    dut._log.info("Waiting on first fresh sample, takes a while...")
+    await RisingEdge(dut.fresh_sample)
     dut._log.info(f"Got it, clocking in {num_samples}")
     
     
