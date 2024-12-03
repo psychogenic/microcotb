@@ -10,7 +10,7 @@ from microcotb.triggers import ClockCycles
 import microcotb as cocotb
 import microcotb.log as logging
 from microcotb.time.value import TimeValue
-from microcotb.triggers.edge import RisingEdge, FallingEdge
+from microcotb.triggers.edge import RisingEdge
 
 from microcotb.utils import get_sim_time
 

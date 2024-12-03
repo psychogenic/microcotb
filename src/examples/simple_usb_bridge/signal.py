@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 AsynchronousStateNotifs = True
 PollShortDelay = 0.002
-PollCertainDelay = 0.006
+PollCertainDelay = 0.005
 
 
 SuperVerbose = False

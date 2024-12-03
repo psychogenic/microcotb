@@ -1,0 +1,8 @@
+0	PowerUp
+1	Init
+2	CalcDiff
+3	Compare
+4	MoveNext
+5	DetectValid
+6	DisplayResult
+

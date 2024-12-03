@@ -186,6 +186,11 @@ class DUT(microcotb.dut.DUT):
         self._queued_state_changes = []
         return v
     
+    def dump_queued_state_changes(self):
+        v = self.get_queued_state_changes()
+        for st in v:
+            print(st[1])
+    
     def get_events(self, test_name:str):
         if test_name not in self.events_of_interest_per_test:
             print(f'No "{test_name}" events found')
