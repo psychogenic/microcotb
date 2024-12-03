@@ -29,6 +29,27 @@ class Event:
         return f'<Event @ {self.ts}: {self.var_name} = {self.value}>'
 
 class VCD:
+    WriterClass = None 
+    
+    @classmethod 
+    def writer_class(cls):
+        if cls.WriterClass is not None:
+            return cls.WriterClass
+        try:
+            from vcd import VCDWriter
+            cls.WriterClass = VCDWriter
+        except:
+            log.info(f"No VCD support")
+            cls.WriterClass = False
+            
+        return cls.WriterClass
+        
+    @classmethod 
+    def write_supported(cls):
+        w_class = cls.writer_class()
+        if w_class is None or not w_class:
+            return False
+        return True
     
     def __init__(self, events_list:list, timescale='1 ns'):
         self.events = events_list
@@ -37,14 +58,23 @@ class VCD:
         self._variable_settings = dict()
         self._last_values = dict()
         
+    
+    
+    
+        
     def add_variable(self, name:str, width:int, scope:str='dut'):
         self._variable_settings[name] = (scope, name, 'wire', width)
         
     def write_to(self, outfile_path:str):
+        if not self.write_supported():
+            log.error("No VCD write support")
+            return False 
+        
         log.info(f"Write VCD file to {outfile_path} with {len(self.events)} events")
-        from vcd import VCDWriter
+        
+        w_class = self.writer_class()
         outfile = open(outfile_path, 'w')
-        with VCDWriter(outfile, timescale=self.timescale, date='today') as writer:
+        with w_class(outfile, timescale=self.timescale, date='today') as writer:
             for vname,settings in self._variable_settings.items():
                 self._known_variables[vname] = writer.register_var(*settings, init=0)
                 self._last_values[vname] = None

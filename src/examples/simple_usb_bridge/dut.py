@@ -93,7 +93,7 @@ class DUT(microcotb.dut.DUT):
                  name:str='SUB', 
                  auto_discover:bool=False):
         super().__init__(name)
-        self.write_test_vcds_to_dir = None
+        self._write_test_vcds_to_dir = None
         self._added_signals = dict()
         self._signal_by_address = dict()
         self._alias_to_signal = dict()
@@ -105,7 +105,20 @@ class DUT(microcotb.dut.DUT):
         if auto_discover:
             self.discover()
             
-
+    @property 
+    def write_test_vcds_to_dir(self):
+        return self._write_test_vcds_to_dir
+    
+    @write_test_vcds_to_dir.setter 
+    def write_test_vcds_to_dir(self, set_to:str):
+        if not VCD.write_supported():
+            raise RuntimeError('no VCD write support on platform')
+        
+        if set_to is not None and not os.path.exists(set_to):
+            raise ValueError(f'VCD write path "{set_to}" DNE')
+        
+        self._write_test_vcds_to_dir = set_to
+            
     def add_signal(self, name, addr, width:int, is_writeable_input:bool=False):
         log.error("Override add_signal")
         raise RuntimeError('add_signal needs override')
@@ -122,6 +135,9 @@ class DUT(microcotb.dut.DUT):
         # use auto-discover instead self.discover()
         super().testing_will_begin()
         if self.write_test_vcds_to_dir:
+            if not VCD.write_supported():
+                log.warn("No VCD write support on platform")
+                return 
             if not self.is_monitoring:
                 log.warn(f"Request to write VCDs to '{self.write_test_vcds_to_dir}'--activating monitoring")
                 self.is_monitoring = True
