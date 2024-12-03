@@ -8,7 +8,7 @@ Created on Nov 29, 2024
 from microcotb.ports.io import IO
 
 # get the Simple USB Bridge DUT
-import examples.simple_usb_bridge.dut as sub_dut
+import examples.simple_usb_bridge.dut_sub as dut_sub
 
 import microcotb.log as logging
 
@@ -19,7 +19,7 @@ class NoopSignal:
         self.name = name 
         self.value = 0
 
-class TinyTapeoutDUT(sub_dut.DUT):
+class TinyTapeoutDUT(dut_sub.DUT):
     '''
         Assume the general purpose AnythingPMOD is loaded with 
         FPGA I/O SUB, with
@@ -39,7 +39,7 @@ class TinyTapeoutDUT(sub_dut.DUT):
                  start_readonly:bool=False):
         self.start_readonly = start_readonly
         super().__init__(serial_port, name, auto_discover)
-        self.ena = NoopSignal('ena')
+        self.ena = NoopSignal('ena') # give it a default 'ena' that does nothing
         
     def discover(self):
         super().discover()
