@@ -68,6 +68,10 @@ class Runner:
                     dut._log.error(f"*** {nm} expected fail, so PASS ***")
                 else:
                     dut._log.warn(f"*** Test '{nm}' PASS ***")
+            except KeyboardInterrupt:
+                test.failed = True 
+                test.failed_msg = 'Keyboard interrupt'
+                num_failures += 1
             except Exception as e:
                 test.failed = True
                 dut._log.error(exception_as_str(e))
