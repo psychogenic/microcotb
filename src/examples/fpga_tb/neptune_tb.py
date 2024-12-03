@@ -10,7 +10,7 @@ https://github.com/psychogenic/tt04-neptune/blob/main/src/test.py
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
 
-from examples.simple_usb_bridge.dut import DUT
+from examples.simple_usb_bridge.dut_sub import DUT, DefaultPort
 from microcotb.clock import Clock
 from microcotb.triggers import Timer, ClockCycles # RisingEdge, FallingEdge, Timer, ClockCycles
 import microcotb as cocotb
@@ -244,7 +244,7 @@ async def note_b_high(dut):
  
 
 
-@cocotb.test()
+## @cocotb.test()
 async def note_b_exact(dut):
     dispValues = await note_b(dut, delta=0, msg="B exact")
     targ_value = (displayProx['exact'] & ProxSegMask)
@@ -265,10 +265,17 @@ def main(dut:DUT = None):
     logging.basicConfig(level=logging.DEBUG)
     runner = cocotb.get_runner()
     if dut is None:
-        dut = DUT('/dev/ttyACM0', 'Neptune', auto_discover=True)
+        dut = getDUT()
     dut._log.info(f"enabled neptune project, will test with {runner}")
+    
+    dut.is_monitoring = True
+    dut.write_test_vcds_to_dir = '/tmp'
     runner.test(dut)
 
+
+def getDUT(serial_port:str=DefaultPort, name:str='Neptune'):
+    dut = DUT(serial_port, name, auto_discover=True)
+    return dut
 
 if __name__ == '__main__':
     main()
