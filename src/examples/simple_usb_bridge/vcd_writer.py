@@ -6,7 +6,9 @@ Created on Dec 2, 2024
 '''
 
 from microcotb.time.value import TimeValue
+import microcotb.log as logging
 
+log = logging.getLogger(__name__)
 class Event:
     VariablesWithEvents = dict()
     @classmethod 
@@ -39,12 +41,14 @@ class VCD:
         self._variable_settings[name] = (scope, name, 'wire', width)
         
     def write_to(self, outfile_path:str):
+        log.info(f"Write VCD file to {outfile_path} with {len(self.events)} events")
         from vcd import VCDWriter
         outfile = open(outfile_path, 'w')
         with VCDWriter(outfile, timescale=self.timescale, date='today') as writer:
             for vname,settings in self._variable_settings.items():
                 self._known_variables[vname] = writer.register_var(*settings, init=0)
                 self._last_values[vname] = None
+                log.debug(f'Registering variable "{vname}" for VCD')
             
             for evt in self.events:
                 event:Event = evt
