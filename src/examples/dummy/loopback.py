@@ -14,8 +14,8 @@ class FakePinWithCallback(PinWrapper):
         A pin that lets us know, through a callback, when 
         it has been set
     '''
-    def __init__(self, wr_callback):
-        super().__init__()
+    def __init__(self, name:str, wr_callback):
+        super().__init__(name)
         self._cb = wr_callback 
     
     @property 
@@ -43,9 +43,9 @@ class LoopBackCounter(DUT):
     '''
     def __init__(self, name:str='LoopBackcount_ener'):
         super().__init__(name)
-        self.rst_n = FakePinWithCallback(self.reset_set)
-        self.clk = FakePinWithCallback(self.clocked)
-        self.count_en = PinWrapper()
+        self.rst_n = FakePinWithCallback('rst_n', self.reset_set)
+        self.clk = FakePinWithCallback('clk', self.clocked)
+        self.count_en = PinWrapper('count_en')
         self._input = 0
         self._output = 0
         
