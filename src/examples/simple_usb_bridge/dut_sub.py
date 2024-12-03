@@ -132,13 +132,15 @@ class DUT(BaseDUT):
         
         return self.send_and_recv_command(bts, 100)
         
-    def send_and_recv_command(self, cmd:bytearray, max_size:int=500):
-        print(f"SNR {cmd} {max_size}")
+    def send_and_recv_command(self, cmd:bytearray, max_size:int=500, delay:float=None):
+        # print(f"SNR {cmd} {max_size}")
         self.poll_statechanges()
         self.ser_stream.suspend_state_monitoring = True
         self.poll_general()
         self.ser_stream.write_out(cmd)
-        self.poll_general(max_size, delay=0.05)
+        if delay is None:
+            delay=0.05
+        self.poll_general(max_size, delay=delay)
         a = self.ser_stream.get_stream()
         self.ser_stream.suspend_state_monitoring = not self.is_monitoring
         return a
@@ -161,16 +163,17 @@ class DUT(BaseDUT):
         if not ser.is_open:
             raise RuntimeError(f'Serial port on {self.port} not open')
 
-        a = self.send_and_recv_command(b'l', 1000)
-        fields = a.split(b'\n')
+        a = self.send_and_recv_command(b'l', 2000, delay=0.2)
+        fields = a.split(b'|')
+        print(fields)
         for f in fields:
             if not len(f):
                 continue
-            kv = f.split(b':')
+            kv = f.split(b'~')
             if len(kv) > 1:
                 nm = kv[0].decode()
                 if len(kv[1]) < 2:
-                    log.error(f"field {nm} has insufficient values in listing {kv[1]}")
+                    log.error(f"field {nm} has insufficient values in listing {kv}")
                     continue
                 
                 if len(kv[1]) > 2:
