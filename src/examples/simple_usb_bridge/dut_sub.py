@@ -41,15 +41,15 @@ class SUBStateChangeReport(StateChangeReport):
             
             # we need at least 3 bytes
             # ADDRESS = VALUE
-            if len(report) >= i+3:
+            if len(report) >= i+2:
                 port_addr = report[i]
-                if port_addr in io_by_address and report[i+1] == ord('='):
+                if port_addr in io_by_address:
                     pname = io_by_address[port_addr].port.name
-                    pvalue = report[i+2]
+                    pvalue = report[i+1]
                     self.add_change(pname, pvalue)
                 else:
                     print(f'{port_addr} in io_by_address and {report[i+1]} == {ord("=")}?')
-                i += 3
+                i += 2
             else:
                 self.LeftOvers = report[i:]
                 #print(f"WEIRD: \n{report}\n{report[i:]}")

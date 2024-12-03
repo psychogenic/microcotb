@@ -158,10 +158,25 @@ class SerialStream:
                     while not self.serial.in_waiting:
                         time.sleep(PollShortDelay)
                 else:
-                    self.state_stream += v
-                    self.state_byte += 1
                     verbose_debug(f"stat chng got {v} now at {self.state_byte} byte")
-                    if self.state_byte >= 3:
+                    
+                    if self.state_byte == 0:
+                        # multibits have address 1AAAAV
+                        # singlebits have address 0AAAA
+                        address = val & 0b111111
+                        if address <= 0b1111:
+                            # single bit, value is stashed in high bit
+                            bit_value = 1 if val & 0x80 else 0
+                            self.state_stream += bytearray([address, bit_value])
+                            self.state_byte = 0
+                        else:
+                            self.state_stream += bytearray([address])
+                            self.state_byte += 1
+                    else:
+                        self.state_stream += v
+                        self.state_byte += 1
+                        
+                    if self.state_byte >= 2:
                         self.state_byte = 0
                     if not self.serial.in_waiting:
                         time.sleep(PollShortDelay)
