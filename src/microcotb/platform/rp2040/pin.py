@@ -8,8 +8,14 @@ Created on Nov 26, 2024
 from machine import Pin
 
 class PinWrapper:
-    def __init__(self, pin):
+    def __init__(self, name:str, pin):
         self._pin = pin 
+        self._name = name 
+        
+    @property 
+    def name(self):
+        return self._name
+        
         
     @property 
     def value(self):
@@ -20,3 +26,6 @@ class PinWrapper:
         #if self._pin.mode != Pin.OUT:
         #    self._pin.mode = Pin.OUT
         self._pin.value(set_to)
+        
+    def __repr__(self):
+        return f'<Pin {self._name}'
