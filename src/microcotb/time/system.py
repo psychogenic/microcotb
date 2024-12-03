@@ -12,6 +12,7 @@ class SystemTimeout(Exception):
     pass
 
 class SystemTime:
+    ResetTime = None
     _global_time = TimeValue(0, TimeValue.BaseUnits)
     _min_sleep_time = TimeValue(
                         TimeConverter.rescale(200, 'us', TimeValue.BaseUnits), 
@@ -20,7 +21,10 @@ class SystemTime:
     
     @classmethod 
     def reset(cls):
-        cls._global_time = TimeValue(0, TimeValue.BaseUnits)
+        if cls.ResetTime is None:
+            cls._global_time = TimeValue(0, TimeValue.BaseUnits)
+        else:
+            cls._global_time = cls.ResetTime.clone()
         
     @classmethod 
     def current(cls) -> TimeValue:
