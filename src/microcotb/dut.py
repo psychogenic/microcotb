@@ -12,7 +12,8 @@ from microcotb.testcase import TestCase
 from microcotb.platform import PinWrapper
 
 class NoopSignal:
-    def __init__(self, def_value:int=0):
+    def __init__(self, name:str, def_value:int=0):
+        self._name = name
         self._value = def_value
         
     @property 
@@ -23,8 +24,12 @@ class NoopSignal:
     def value(self, set_to):
         self._value = set_to
         
+    def __repr__(self):
+        return f'<Noop {self._name}>'
+        
 class Wire(NoopSignal):
-    pass
+    def __repr__(self):
+        return f'<Wire {self._name}>'
 
 
 class SliceWrapper:
