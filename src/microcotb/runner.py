@@ -61,6 +61,7 @@ class Runner:
             test.failed = False
             try:
                 dut._log.info(f"*** Running Test {test_count+1}/{num_tests}: {nm} ***") 
+                dut.testing_unit_start(test)
                 t_start_s = time.runtime_start()
                 test.run(dut)
                 if test.expect_fail: 
