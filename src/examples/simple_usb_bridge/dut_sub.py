@@ -116,6 +116,9 @@ class DUT(BaseDUT):
         self._signal_by_address[s.address] = iop
         
     
+    def testing_unit_start(self, test):
+        self.poll_general(delay=0.05) # make sure we flush anything
+        super().testing_unit_start(test)
         
     @property 
     def is_monitoring(self):

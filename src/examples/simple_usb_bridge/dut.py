@@ -17,6 +17,7 @@ from microcotb.ports.io import IO
 
 import microcotb.log as logging
 import microcotb.dut 
+from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
 
 from examples.simple_usb_bridge.signal import Signal
@@ -141,7 +142,24 @@ class DUT(microcotb.dut.DUT):
             if not self.is_monitoring:
                 log.warn(f"Request to write VCDs to '{self.write_test_vcds_to_dir}'--activating monitoring")
                 self.is_monitoring = True
-        
+                # so we can capture initial state
+                SystemTime.ResetTime = TimeValue(1, TimeValue.BaseUnits)
+                
+    def testing_unit_start(self, test:microcotb.dut.TestCase):
+        if self.write_test_vcds_to_dir and VCD.write_supported() and self.is_monitoring:
+            log.info("Test unit startup -- writing VCDs, get initial state")
+            stateChange = StateChangeReport()
+            for signame in self._added_signals.keys():
+                if self.has_alias_for(signame):
+                    continue #skip aliase
+                s = self._added_signals[signame]
+                log.debug(f"Initial state {signame} = {s.value}")
+                stateChange.add_change(signame, s.value)
+            if len(stateChange):
+                self._queued_state_changes.append(tuple([TimeValue(0, TimeValue.BaseUnits), stateChange]))
+                
+                
+            
     
     def testing_unit_done(self, test:microcotb.dut.TestCase):
         for s in self._added_signals.values():
@@ -218,6 +236,10 @@ class DUT(microcotb.dut.DUT):
             return self._signal_name_to_alias[signal_name]
         
         return signal_name
+    
+    def has_alias_for(self, signal_name:str):
+        _alias = self.aliased_name_for(signal_name)
+        return signal_name in self._signal_name_to_alias
         
         
         
