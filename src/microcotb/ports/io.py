@@ -52,5 +52,10 @@ class IO(LogicObject):
         val = hex(int(self.value)) if self.port.is_readable  else ''
         return f'<IO {self.port.name} {val}>'
     
+    def __int__(self):
+        if self.port.is_readable:
+            return int(self.value)
+        return None
+    
     def __str__(self):
         return str(self.value)
