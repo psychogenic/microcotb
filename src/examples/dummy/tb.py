@@ -142,7 +142,7 @@ def main():
     
     dut = DUT()
     dut._log.info("enabled loopback/counter project, running")
-    runner = cocotb.get_runner()
+    runner = cocotb.get_runner(__name__)
     dut._log.info(f"Runner: {runner}")
     runner.test(dut)
 

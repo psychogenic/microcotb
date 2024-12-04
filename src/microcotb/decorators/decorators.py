@@ -6,6 +6,10 @@ Created on Nov 27, 2024
 '''
 from .parametrized import Parameterized
 from microcotb.runner import Runner, TestCase
+import microcotb.platform as plat
+import microcotb
+import os 
+
 
 def test(func=None, *,
     timeout_time: float = None,
@@ -16,9 +20,17 @@ def test(func=None, *,
     stage: int = 0,
     name: str = None):
     
+    runnerName = microcotb.get_caller_file(2)
     def my_decorator_func(func):
-        runner = Runner.get() 
-        test_name = func.__name__ if name is None else name
+        runner = Runner.get(runnerName) 
+        if name is None:
+            if plat.Features.FunctionsHaveQualifiedNames:
+                test_name = func.__qualname__ 
+            else:
+                test_name = func.__name__
+        else:
+            test_name = name
+            
         if isinstance(func, Parameterized):
             for tf in func.generate_tests(
                                 name=test_name,

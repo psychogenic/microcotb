@@ -9,17 +9,23 @@ from microcotb.testcase import TestCase
 from microcotb.dut import DUT
 from microcotb.platform import exception_as_str
 import microcotb.utils.tm as time
+import microcotb.platform as plat
     
-_RunnerSingleton = None 
+_RunnerSingletonByName = None
 class Runner:
     SummaryNameFieldLen = 40
     @classmethod 
-    def get(cls):
-        global _RunnerSingleton
-        if _RunnerSingleton is None:
-            _RunnerSingleton = cls()
+    def get(cls, name:str):
+        global _RunnerSingletonByName
+        if _RunnerSingletonByName is None:
+            _RunnerSingletonByName = dict() 
+        
+        if name not in _RunnerSingletonByName:   
+            _RunnerSingletonByName[name] = cls()
             
-        return _RunnerSingleton
+        return _RunnerSingletonByName[name]
+    
+    
     
     @classmethod 
     def clear_all(cls):
@@ -33,7 +39,10 @@ class Runner:
         
     def add_test(self, test:TestCase):
         if test.name is None:
-            test.name = f'test_{test.function.__name__}'
+            if plat.Features.FunctionsHaveQualifiedNames:
+                test.name = f'test_{test.function.__qualname__}'
+            else:
+                test.name = f'test_{test.function.__name__}'
         self.test_names.append(test.name)
         self.tests_to_run[test.name] = test
         
