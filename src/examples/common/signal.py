@@ -111,10 +111,15 @@ class SerialStream:
         verbose_debug(f'writeout {bts}')
         return self.serial.write(bts)
     
-    def poll(self, size=None, delay:float = 0):
+    def poll(self, size=None, delay:float = 0, wait_for_atleast:int=0):
         
         if delay > 0:
             time.sleep(delay)
+            
+        if wait_for_atleast:
+            while self.serial.in_waiting < wait_for_atleast:
+                time.sleep(0.001)
+                
         if size is not None:
             self.stream += self.serial.read(size)
             verbose_debug(f"poll {size}, stream now {self.stream}")
