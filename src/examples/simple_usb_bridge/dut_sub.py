@@ -1,6 +1,11 @@
 '''
 Created on Nov 28, 2024
 
+This is a basic implementation for the simple USB bridge protocol, 
+going over USB serial to talk to a DUT.
+
+It's developped in conjunction with my FPGA-side, so is strictly 
+bound to that specific protocol.
 
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
@@ -11,7 +16,7 @@ import serial
 DefaultPort = '/dev/ttyACM0'
 
 import microcotb.log as logging
-from examples.simple_usb_bridge.signal import SUBSignal, SerialStream
+from examples.common.signal import SUBSignal, SerialStream
 from examples.simple_usb_bridge.dut import DUT as BaseDUT
 from examples.simple_usb_bridge.dut import StateChangeReport, SUBIO
 
@@ -85,11 +90,11 @@ class DUT(BaseDUT):
         if width is None:
             # take a guess
             if s.multi_bit:
+                log.warn(f'GUESSING that {name} is 8 bits wide!')
                 width = 8
             else:
+                log.warn(f'GUESSING that {name} is 1 bit wide!')
                 width = 1
-                
-                
             
         def reader():
             if self.is_monitoring:
@@ -99,9 +104,10 @@ class DUT(BaseDUT):
         
         def writer(v:int):
             if self.is_monitoring:
+                # make note of what we've done
                 chg = StateChangeReport()
                 chg.add_change(self.aliased_name_for(name), v)
-                self._append_state_change(chg)
+                self.append_state_change(chg)
                 self.poll_statechanges()
             s.write(v)
             if self.is_monitoring:
@@ -120,18 +126,30 @@ class DUT(BaseDUT):
         self.poll_general(delay=0.05) # make sure we flush anything
         super().testing_unit_start(test)
         
+    def testing_unit_done(self, test):
+        super().testing_unit_done(test)
+        self.poll_general(delay=0.05)
+        if self.ser_stream.stream_size:
+            log.info(self.ser_stream.get_stream())
+        
     @property 
     def is_monitoring(self):
         return self._is_monitoring
     
     @is_monitoring.setter
     def is_monitoring(self, set_to:bool):
+        old_state = self._is_monitoring
         if set_to:
             self._is_monitoring = True
             bts = bytearray([ord('m'), 1])
         else:
             self._is_monitoring = False
             bts = bytearray([ord('m'), 0])
+        
+        if self._is_monitoring and not old_state:
+            for stch in self.vcd_initial_state_reports():
+                self.append_state_change(stch)
+            
         
         return self.send_and_recv_command(bts, 100)
         
@@ -206,11 +224,11 @@ class DUT(BaseDUT):
         if self.ser_stream.state_stream_size:
             s = SUBStateChangeReport(self.ser_stream.get_state_stream(), self._signal_by_address)
             if len(s):
-                self._append_state_change(s)
+                self.append_state_change(s)
                  
             return s 
         
-        return len(self._queued_state_changes)
+        return len(self.queued_state_changes)
 
     
     def keepPolling(self):
