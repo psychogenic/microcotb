@@ -67,6 +67,7 @@ class DUT(BaseDUT):
                  auto_discover:bool=False):
         
         self.port = serial_port
+        self.asynchronous_events = True
         self._serial = None
         self._stream = None
         super().__init__(name, auto_discover)
@@ -97,7 +98,7 @@ class DUT(BaseDUT):
                 width = 1
             
         def reader():
-            if self.is_monitoring:
+            if self.is_monitoring and self.asynchronous_events:
                 self.poll_statechanges()
                 
             return s.read()
@@ -108,7 +109,8 @@ class DUT(BaseDUT):
                 chg = StateChangeReport()
                 chg.add_change(self.aliased_name_for(name), v)
                 self.append_state_change(chg)
-                self.poll_statechanges()
+                if self.asynchronous_events:
+                    self.poll_statechanges()
             s.write(v)
             if self.is_monitoring:
                 self.poll_statechanges()
@@ -155,7 +157,8 @@ class DUT(BaseDUT):
         
     def send_and_recv_command(self, cmd:bytearray, max_size:int=500, delay:float=None):
         # print(f"SNR {cmd} {max_size}")
-        self.poll_statechanges()
+        if self.asynchronous_events:
+            self.poll_statechanges()
         self.ser_stream.suspend_state_monitoring = True
         self.poll_general()
         self.ser_stream.write_out(cmd)
@@ -204,9 +207,12 @@ class DUT(BaseDUT):
                 desc = kv[1][1]
                 is_input = True if desc & (1<<7) else False 
                 width = desc & 0x7f
-                log.error(f'Have signal {nm} ({width}) at {addr} (from {kv[1]}) (input: {is_input})')
+                log.debug(f'Have signal {nm} ({width}) at {addr} (from {kv[1]}) (input: {is_input})')
                 self.add_signal(nm, addr, width, is_input)
                 
+        
+        syncbytes = bytearray([ord('s'), 0 if self.asynchronous_events else 1])
+        self.send_and_recv_command(syncbytes, 100)
 
     def poll_general(self, size=None, delay:float=0, suspend_state_stream:bool=False):
         oldval = self.ser_stream.suspend_state_monitoring
@@ -220,7 +226,12 @@ class DUT(BaseDUT):
         return self.ser_stream.stream_size
         
     def poll_statechanges(self):
-        self.ser_stream.poll()
+        wait_at_least = 0
+        if not self.asynchronous_events:
+            self.ser_stream.write_out(b'c') # get state change 
+            wait_at_least = 2
+            
+        self.ser_stream.poll(wait_for_atleast=wait_at_least)
         if self.ser_stream.state_stream_size:
             s = SUBStateChangeReport(self.ser_stream.get_state_stream(), self._signal_by_address)
             if len(s):
