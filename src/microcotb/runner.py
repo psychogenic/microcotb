@@ -95,6 +95,8 @@ class Runner:
                 num_failures += 1
                 
             test.real_time = time.runtime_delta_secs(t_start_s)
+            steps_per_sec = (1/Clock.get_shortest_event_interval().time_in('sec'))/test.real_time
+            dut._log.info(f'Ran @ {steps_per_sec:.2f} steps/s')
             test.run_time = SystemTime.current()
             dut.testing_unit_done(test)
             
