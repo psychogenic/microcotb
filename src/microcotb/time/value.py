@@ -107,7 +107,7 @@ class TimeValue:
         return TimeValue(self.time*1000, smaller_units)
         
     def _directly_comparable(self, other):
-        return isinstance(other, TimeValue) and other.units == self.units 
+        return other.units == self.units 
     
     def __float__(self):
         if self._as_float is None:
@@ -134,20 +134,16 @@ class TimeValue:
             self._store_baseunits()
             return self
         
-        if isinstance(other, TimeValue):
-            self.time += TimeConverter.rescale(other.time, other.units, self.units)
-            self._store_baseunits()
-            return self
-        raise ValueError
+        self.time += TimeConverter.rescale(other.time, other.units, self.units)
+        self._store_baseunits()
+        return self
     
     def __add__(self, other):
         if self._directly_comparable(other):
             return TimeValue(self.time + other.time, self.units)
         
-        if isinstance(other, TimeValue):
-            new_time = self.time + TimeConverter.rescale(other.time, other.units, self.units)
-            return TimeValue(new_time, self.units)
-        raise ValueError
+        new_time = self.time + TimeConverter.rescale(other.time, other.units, self.units)
+        return TimeValue(new_time, self.units)
     
     def __repr__(self):
         return f'<TimeValue {round(self.time)} {self.units}>'
@@ -164,10 +160,8 @@ class TimeValue:
         return f'{v.time:.4f}{v.units}'
     
     def __truediv__(self, other):
-        if isinstance(other, TimeValue):
-            other_conv = TimeConverter.rescale(other.time, other.units, self.units)
-            return self.time / other_conv
-        raise ValueError
+        other_conv = TimeConverter.rescale(other.time, other.units, self.units)
+        return self.time / other_conv
     
     def __mul__(self, other:int):
         return TimeValue(self.time*other, self.units)
