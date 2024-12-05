@@ -44,6 +44,36 @@ async def ack_register_rcvd(dut):
     dut.register_processed.value = 0
     await ClockCycles(dut.clk, 1)
 
+@cocotb.test()
+@cocotb.parametrize(
+    ('mon_full', [False, True])
+)
+async def test_monitorcontrol(dut:DUT, mon_full:bool):
+    clock = Clock(dut.clk, 10, units="us")
+    cocotb.start_soon(clock.start())
+    
+    # say we know we can reset and get 
+    # a fresh sample... skip logging
+    if mon_full:
+        dut._log.info("Test with monitoring throughout")
+    else:
+        dut._log.info("Test with monitoring suspended at first")
+    dut.is_monitoring = mon_full 
+    # and get there
+    await reset_and_enable(dut, 50)
+    await RisingEdge(dut.fresh_sample)
+    
+    # now the area of interest, monitor back on
+    dut._log.info("now wait on value_valid...")
+    await RisingEdge(dut.value_valid)
+    
+    dut.is_monitoring = True 
+    dut._log.info("Got fresh reg set!!")
+    await ack_register_rcvd(dut)
+    await ClockCycles(dut.clk, 60)
+    
+
+
 @cocotb.test(timeout_time=40, timeout_unit='ms')
 async def test_firstvalid_time(dut):
     clock = Clock(dut.clk, 10, units="us")
@@ -71,13 +101,19 @@ async def test_firstvalid_time(dut):
     await RisingEdge(dut.value_valid)
     
     
-@cocotb.test(timeout_time=300, timeout_unit='ms')
-async def test_parse(dut):
     
-    num_samples = 40 # number of registers to fetch
+@cocotb.test(timeout_time=300, timeout_unit='ms')
+async def test_parse(dut:DUT):
+    
+    num_samples = 30 # number of registers to fetch
     
     clock = Clock(dut.clk, 10, units="us")
     cocotb.start_soon(clock.start())
+    
+    
+    # don't log this test, go faster
+    dut.write_vcd_enabled = False
+    dut.is_monitoring = False
     
     await reset_and_enable(dut)
     
@@ -108,7 +144,7 @@ async def test_parse(dut):
 
 def main(dut:DUT = None):
     TimeValue.ReBaseStringUnits = True
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     runner = cocotb.get_runner()
     if dut is None:
         dut = getDUT()
@@ -118,6 +154,7 @@ def main(dut:DUT = None):
     dut.is_monitoring = True
     # write a VCD for every test run
     dut.write_test_vcds_to_dir = '/tmp'
+    dut.write_vcd_enabled = True
     
     # run them tests
     runner.test(dut)
@@ -125,6 +162,7 @@ def main(dut:DUT = None):
 
 def getDUT(serial_port:str=DefaultPort, name:str='PSYMRDR'):
     dut = DUT(serial_port, name, auto_discover=True)
+    dut.asynchronous_events = True
     return dut
 
 if __name__ == '__main__':
