@@ -5,6 +5,7 @@ Created on Nov 27, 2024
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
 
+import microcotb.platform as plat
 from microcotb.runner import TestCase
 def iter_product(*iterables, repeat=1):
     if repeat < 0:
@@ -22,6 +23,8 @@ class Parameterized:
         self.test_function = func
         self.__name__ = func.__name__
         self.options = options
+        if plat.Features.FunctionsHaveQualifiedNames:
+            self.__qualname__ = func.__qualname__ 
         #self.test_function_runner = None
     def generate_tests(self,
         *,
