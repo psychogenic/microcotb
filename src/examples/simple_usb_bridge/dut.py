@@ -35,13 +35,24 @@ class SUBIO(IO):
         super().__init__(name, width, read_signal_fn, write_signal_fn)
         self._sub_signal = sig
         
+    @property 
+    def signal(self) -> Signal:
+        return self._sub_signal
+    
+    @property 
+    def name(self) -> str:
+        return self.port.name 
+    
+    @property 
+    def width(self) -> int:
+        return self.port.width
     
     def reset(self):
-        self._sub_signal.reset()
+        self.signal.reset()
         
     @property
     def is_writeable(self) -> bool:
-        return self._sub_signal.is_writeable
+        return self.signal.is_writeable
     
     
     def toggle(self):

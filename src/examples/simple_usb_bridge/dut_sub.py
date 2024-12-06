@@ -20,7 +20,31 @@ from examples.common.signal import SUBSignal, SerialStream
 from examples.simple_usb_bridge.dut import DUT as BaseDUT
 from examples.simple_usb_bridge.dut import StateChangeReport, SUBIO
 
-log = logging.getLogger(__name__)
+loxxxg = logging.getLogger(__name__)
+
+class StateChangeListener:
+    
+    def __init__(self):
+        self.last_vals = dict() 
+        
+    def clear(self):
+        self.last_vals = dict() 
+        
+    
+    def state_change_event(self, s:StateChangeReport):
+        dontprint = ['clk', 'sck', 'cipo', 'copi']
+        # print(f'LCH{len(s.all_changes())}')
+        for sig, val in s.all_changes():
+            self.last_vals[sig] = val
+            #if sig not in dontprint:
+            #    print(f"ev {sig} {val}")
+            
+    def has(self, name:str):
+        return name in self.last_vals 
+    
+    def get(self, signame:str):
+        return self.last_vals[signame]
+            
 
 class SUBStateChangeReport(StateChangeReport):
     LeftOvers = None
@@ -33,6 +57,7 @@ class SUBStateChangeReport(StateChangeReport):
         # print(report)
         if self.LeftOvers is not None:
             report = self.LeftOvers + report 
+            print(f'REP+LFT{report}')
             self.LeftOvers = None
             
         i = 0
@@ -42,10 +67,9 @@ class SUBStateChangeReport(StateChangeReport):
                 # skip over start and any EOF
                 i += 1
                 if i >= len(report):
+                    # print(f"EVN {len(self)}")
                     return
             
-            # we need at least 3 bytes
-            # ADDRESS = VALUE
             if len(report) >= i+2:
                 port_addr = report[i]
                 if port_addr in io_by_address:
@@ -53,13 +77,12 @@ class SUBStateChangeReport(StateChangeReport):
                     pvalue = report[i+1]
                     self.add_change(pname, pvalue)
                 else:
-                    print(f'{port_addr} in io_by_address and {report[i+1]} == {ord("=")}?')
+                    raise Exception(f"AAAAAGHZ {port_addr}")
                 i += 2
             else:
                 self.LeftOvers = report[i:]
-                #print(f"WEIRD: \n{report}\n{report[i:]}")
+                # print(f"LFTVR: {report[i:]} self:{len(self)}")
                 return
-        
 
 class DUT(BaseDUT):
     def __init__(self, serial_port:str=DefaultPort, 
@@ -70,12 +93,13 @@ class DUT(BaseDUT):
         self.asynchronous_events = True
         self._serial = None
         self._stream = None
+        self._last_state = StateChangeListener()
         super().__init__(name, auto_discover)
     
     @property 
     def ser_stream(self) -> SerialStream:
         if self._stream is None:
-            self._stream = SerialStream(serial.Serial(self.port, 115200, timeout=0.5))
+            self._stream = SerialStream(serial.Serial(self.port, 115200*6, timeout=0.5))
         return self._stream
     @property 
     def serial(self) -> serial.Serial:
@@ -91,28 +115,39 @@ class DUT(BaseDUT):
         if width is None:
             # take a guess
             if s.multi_bit:
-                log.warn(f'GUESSING that {name} is 8 bits wide!')
+                self._log.warning(f'GUESSING that {name} is 8 bits wide!')
                 width = 8
             else:
-                log.warn(f'GUESSING that {name} is 1 bit wide!')
+                self._log.warning(f'GUESSING that {name} is 1 bit wide!')
                 width = 1
             
         def reader():
-            if self.is_monitoring and self.asynchronous_events:
-                self.poll_statechanges()
+            if self.is_monitoring:
+                if self.asynchronous_events:
+                    self.poll_statechanges()
+                if self._last_state is not None and self._last_state.has(name):
+                    return self._last_state.get(name)
                 
             return s.read()
         
         def writer(v:int):
             if self.is_monitoring:
                 # make note of what we've done
+                if self.asynchronous_events:
+                    self.poll_statechanges()
                 chg = StateChangeReport()
                 chg.add_change(self.aliased_name_for(name), v)
                 self.append_state_change(chg)
-                if self.asynchronous_events:
-                    self.poll_statechanges()
+                if self._last_state is not None:
+                    self._last_state.state_change_event(chg)
+                    
+            # print('W', end='')
             s.write(v)
             if self.is_monitoring:
+                if self._last_state and self.asynchronous_events:
+                    time.sleep(0.0015) # TODO:FIXME sleep
+                    while self.serial.out_waiting:
+                        time.sleep(0.001) # TODO:FIXME sleep
                 self.poll_statechanges()
         
         wrt = None
@@ -132,7 +167,11 @@ class DUT(BaseDUT):
         super().testing_unit_done(test)
         self.poll_general(delay=0.05)
         if self.ser_stream.stream_size:
-            log.info(self.ser_stream.get_stream())
+            self._log.error("TEST UNIT DONE: STREAM HAS")
+            self._log.error(self.ser_stream.get_stream())
+            
+        if self._last_state is not None:
+            self._last_state.clear()
         
     @property 
     def is_monitoring(self):
@@ -180,7 +219,7 @@ class DUT(BaseDUT):
         return a
         
     def discover(self):
-        log.info('SUB DUT performing discovery')
+        self._log.info('SUB DUT performing discovery')
         ser = self.serial 
         if not ser:
             raise RuntimeError(f'Could not get a serial port on {self.port}')
@@ -189,7 +228,8 @@ class DUT(BaseDUT):
 
         a = self.send_and_recv_command(b'l', 2000, delay=0.2)
         fields = a.split(b'|')
-        print(fields)
+        # print(fields)
+        discovered_fields = []
         for f in fields:
             if not len(f):
                 continue
@@ -197,24 +237,44 @@ class DUT(BaseDUT):
             if len(kv) > 1:
                 nm = kv[0].decode()
                 if len(kv[1]) < 2:
-                    log.error(f"field {nm} has insufficient values in listing {kv}")
+                    self._log.error(f"field {nm} has insufficient values in listing {kv}")
                     continue
                 
                 if len(kv[1]) > 2:
-                    log.warning(f"field {nm} has more bytes than expected in listing {kv[1]}")
+                    self._log.warning(f"field {nm} has more bytes than expected in listing {kv[1]}")
                     
                 addr = kv[1][0]
                 desc = kv[1][1]
                 is_input = True if desc & (1<<7) else False 
                 width = desc & 0x7f
-                log.debug(f'Have signal {nm} ({width}) at {addr} (from {kv[1]}) (input: {is_input})')
+                self._log.debug(f'Have signal {nm} ({width}) at {addr} (from {kv[1]}) (input: {is_input})')
                 self.add_signal(nm, addr, width, is_input)
+                discovered_fields.append(nm)
                 
         
         syncbytes = bytearray([ord('s'), 0 if self.asynchronous_events else 1])
         self.send_and_recv_command(syncbytes, 100)
+        
+        desc = []
+        for df in sorted(discovered_fields):
+            field:SUBIO = getattr(self, df)
+            r = 'r' if field.is_readable else ''
+            w = 'w' if field.is_writeable else '' 
+            slc = ''
+            if field.width > 1:
+                slc = f'[{field.width-1}:0]'
+            if r and w:
+                rw = f'{r}{w}'
+            else:
+                rw = f'{r}{w} '
+                
+            desc.append(f'\t{rw} dut.{field.name}{slc}')
+        
+        names = '\n'.join(desc)
+        self._log.info(f'Discovered fields:\n{names}')
 
     def poll_general(self, size=None, delay:float=0, suspend_state_stream:bool=False):
+        
         oldval = self.ser_stream.suspend_state_monitoring
         self.ser_stream.suspend_state_monitoring = suspend_state_stream
         
@@ -236,6 +296,8 @@ class DUT(BaseDUT):
             s = SUBStateChangeReport(self.ser_stream.get_state_stream(), self._signal_by_address)
             if len(s):
                 self.append_state_change(s)
+                if self._last_state is not None:
+                    self._last_state.state_change_event(s)
                  
             return s 
         

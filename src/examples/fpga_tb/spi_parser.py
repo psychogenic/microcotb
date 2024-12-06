@@ -9,6 +9,7 @@ from microcotb.clock import Clock
 from microcotb.triggers import ClockCycles 
 import microcotb as cocotb
 import microcotb.log as logging
+from microcotb.time.system import SystemTime
 from microcotb.time.value import TimeValue
 from microcotb.triggers.edge import RisingEdge
 
@@ -36,7 +37,7 @@ async def reset_and_enable(dut, reset_hold_time:int=50):
 
 async def ack_register_rcvd(dut):
     
-    dut._log.info("ACK reg processed")
+    dut._log.debug("ACK reg processed")
     await ClockCycles(dut.clk, 5)
     
     dut.register_processed.value = 1
@@ -101,45 +102,57 @@ async def test_firstvalid_time(dut):
     await RisingEdge(dut.value_valid)
     
     
+def dump_reg_setting(dut):
+    dut._log.info(f"    Got valid reg ({hex(dut.register.value)}/{hex(dut.register_value.value)})")
     
 @cocotb.test(timeout_time=300, timeout_unit='ms')
 async def test_parse(dut:DUT):
-    
-    num_samples = 30 # number of registers to fetch
-    
+    samples_in_reg_set = [16, 4, 3, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1]
+    num_samples = 11 # number of registers to fetch
+    reg_set = 0
     clock = Clock(dut.clk, 10, units="us")
     cocotb.start_soon(clock.start())
     
     
     # don't log this test, go faster
-    dut.write_vcd_enabled = False
-    dut.is_monitoring = False
+    #dut.write_vcd_enabled = False
+    #dut.is_monitoring = False
     
     await reset_and_enable(dut)
     
     # now it'll read in the file header
     dut._log.info("Waiting on first fresh sample, takes a while...")
     await RisingEdge(dut.fresh_sample)
-    dut._log.info(f"Got it, clocking in {num_samples}")
+    dut._log.info(f"Got it, elapse sim time is {SystemTime.current()}, clocking in {num_samples} registers")
     
     
-    count_valids = 0
-    while count_valids < num_samples:
+    while reg_set < num_samples:
         
         if dut.fresh_sample.value == 1:
             while not int(dut.value_valid.value):
                 await ClockCycles(dut.clk, 2)
+                
             
             dut._log.info("Got fresh reg set!!")
+            assert dut.registers_in_sample.value == samples_in_reg_set[reg_set], f"for {reg_set+1} have {int(dut.registers_in_sample.value)} regs in samp"
+            dut._log.info(f"Set {reg_set+1} does indeed have {samples_in_reg_set[reg_set]} settings")
+            
+            num_regs = 1
+            reg_set += 1
+            
+            # dump_reg_setting(dut)
             await ack_register_rcvd(dut)
+            continue
+            
         
         if not int(dut.value_valid.value):
             await RisingEdge(dut.value_valid)
             dut._log.debug(f"GOT RISING EDGE ON value_valid")
-        
-        count_valids += 1
-        dut._log.info(f"Got valid reg, now have got {count_valids}")
+                
+                
+        dump_reg_setting(dut)
         await ack_register_rcvd(dut)
+        num_regs += 1
         
 
 def main(dut:DUT = None):
@@ -160,7 +173,7 @@ def main(dut:DUT = None):
     runner.test(dut)
 
 
-def getDUT(serial_port:str=DefaultPort, name:str='PSYMRDR'):
+def getDUT(serial_port:str=DefaultPort, name:str='PSYMrdr'):
     dut = DUT(serial_port, name, auto_discover=True)
     dut.asynchronous_events = True
     return dut

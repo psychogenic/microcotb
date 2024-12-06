@@ -18,7 +18,7 @@ PollCertainDelay = 0.005
 SuperVerbose = False
 def verbose_debug(msg):
     if SuperVerbose:
-        log.debug(msg)
+        log.warning(msg)
         
         
 class Signal:
@@ -79,6 +79,10 @@ class Signal:
 class SerialStream:
     def __init__(self, serport:serial.Serial):
         self.serial = serport
+        try:
+            self.serial.set_low_latency_mode(True)
+        except:
+            log.error("Could not set low_latency_mode")
         self.reading_state_changes = False 
         self.stream = bytearray()
         self.state_stream = bytearray()
@@ -109,6 +113,8 @@ class SerialStream:
     
     def write_out(self, bts:bytearray):
         verbose_debug(f'writeout {bts}')
+        while self.serial.out_waiting:
+            time.sleep(0.001)
         return self.serial.write(bts)
     
     def poll(self, size=None, delay:float = 0, wait_for_atleast:int=0):
@@ -133,12 +139,15 @@ class SerialStream:
         
         # verbose_debug(f"regular poll (size {size})")
         
-        while self.serial.in_waiting:
+        while self.serial.in_waiting or self.reading_state_changes:
             
             v = self.serial.read()
             if not len(v):
-                raise RuntimeError('empty v from ser read??')
+                if not self.reading_state_changes:
+                    raise RuntimeError('empty v from ser read??')
             val = v[0]
+            
+            
             if not self.reading_state_changes:
                 
                 if val == ord('m'):
@@ -183,10 +192,8 @@ class SerialStream:
                         
                     if self.state_byte >= 2:
                         self.state_byte = 0
-                    if not self.serial.in_waiting:
-                        time.sleep(PollShortDelay)
-                
-                        
+                    #if not self.serial.in_waiting:
+                    #    time.sleep(PollShortDelay)
 
 
 
@@ -270,8 +277,8 @@ class SUBSignal(Signal):
             send_bytes = bytearray([cmd])
 
         self._current_value = val
-        if self.serial_stream.serial.out_waiting:
-            self.serial_stream.serial.flushOutput()
+        while self.serial_stream.serial.out_waiting:
+            time.sleep(0.001)
             
         
         self.serial_stream.poll()

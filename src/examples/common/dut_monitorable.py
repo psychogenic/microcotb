@@ -18,7 +18,6 @@ import os
 import re
 from microcotb.ports.io import IO
 
-import microcotb.log as logging
 import microcotb.dut 
 from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
@@ -26,7 +25,6 @@ from microcotb.time.system import SystemTime
 from examples.common.signal import Signal
 from examples.common.vcd_writer import Event, VCD
 from microcotb.runner import TestCase
-log = logging.getLogger(__name__)
 
 
 
@@ -108,7 +106,7 @@ class MonitorableDUT(microcotb.dut.DUT):
     # might wish to override (probably)
     def vcd_initial_state_reports(self):
         # override 
-        log.warn("No vcd_initial_state_reports -- override if needed")
+        # log.warning("No vcd_initial_state_reports -- override if needed")
         return []
     
     
@@ -150,16 +148,16 @@ class MonitorableDUT(microcotb.dut.DUT):
         # use auto-discover instead self.discover()
         super().testing_will_begin()
         if self.write_vcd_enabled:
-            log.error("VCD writes enabled")
+            self._log.warning("VCD writes enabled")
             if not VCD.write_supported():
-                log.warn("No VCD write support on platform")
+                self._log.warning("No VCD write support on platform")
                 return 
             
             if self.is_monitoring:
                 # so we can capture initial state
                 SystemTime.ResetTime = TimeValue(1, TimeValue.BaseUnits)
             else:
-                log.warn(f"Request to write VCDs to '{self.write_test_vcds_to_dir}'--activating monitoring")
+                self._log.warning(f"Request to write VCDs to '{self.write_test_vcds_to_dir}'--but NO monitoring on.")
                 
                 
     @property 
@@ -177,7 +175,7 @@ class MonitorableDUT(microcotb.dut.DUT):
         if self.write_vcd_enabled \
            and self.write_test_vcds_to_dir \
            and VCD.write_supported() :
-            log.info("Test unit startup -- writing VCDs, get initial state")
+            self._log.info("Test unit startup -- writing VCDs, get initial state")
             
             for report in self.vcd_initial_state_reports():
                 self.queue_state_change(TimeValue(0, TimeValue.BaseUnits), report)
@@ -187,19 +185,19 @@ class MonitorableDUT(microcotb.dut.DUT):
     
     def testing_unit_done(self, test:microcotb.dut.TestCase):
         if not self.write_vcd_enabled:
-            log.info("No VCD writes enabled")
+            self._log.info("No VCD writes enabled")
             return 
         if not self.write_test_vcds_to_dir:
-            log.warn("Write VCD enabled, but NO vcds dir set?!")
+            self._log.warning("Write VCD enabled, but NO vcds dir set?!")
             return 
         self.events_of_interest_per_test[test.name] = self.get_queued_state_changes()
         fname = self.vcd_file_name(test)
         fpath = os.path.join(self.write_test_vcds_to_dir, f'{fname}.vcd')
-        log.warn(f"writing VCD to '{fpath}'")
+        self._log.warning(f"writing VCD to '{fpath}'")
         try:
             self.write_vcd(test.name, fpath)
         except Exception as e:
-            log.error(f"Issue writing VCD file {fpath}: {e}")
+            self._log.error(f"Issue writing VCD file {fpath}: {e}")
             
             
          

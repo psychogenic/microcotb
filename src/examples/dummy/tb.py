@@ -104,7 +104,7 @@ async def test_timeout(dut, t:int, clk_period:int):
     clock = Clock(dut.clk, clk_period, units="us")
     cocotb.start_soon(clock.start())
     if t >= 200:
-        dut._log.warn(f'Test should FAIL...')
+        dut._log.warning(f'Test should FAIL...')
     else:
         dut._log.info(f'Test should pass...')
         
