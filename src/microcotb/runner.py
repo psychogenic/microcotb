@@ -10,7 +10,7 @@ from microcotb.dut import DUT
 from microcotb.platform import exception_as_str
 import microcotb.utils.tm as time
 import microcotb.platform as plat
-    
+import microcotb.log as logging
 _RunnerSingletonByName = None
 class Runner:
     SummaryNameFieldLen = 40
@@ -50,12 +50,21 @@ class Runner:
     def test(self, dut:DUT):
         from microcotb.time.system import SystemTime
         from microcotb.clock import Clock
-        
+        steps_p_sec_tot = 0
+        num_stepps_avged = 0
         dut.testing_will_begin()
         all_tests_start_s = time.runtime_start()
         num_failures = 0
         num_tests = len(self.test_names)
-        #failures = dict()
+        
+        log = dut._log.getChild('x')
+        log.name = 'runner'
+        
+        if not num_tests:
+            log.error("No tests to run!")
+            return 
+        
+        
         for test_count in range(num_tests):
             nm = self.test_names[test_count]
             SystemTime.reset()
@@ -69,24 +78,24 @@ class Runner:
             
             test.failed = False
             try:
-                dut._log.info(f"*** Running Test {test_count+1}/{num_tests}: {nm} ***") 
+                log.warning(f"*** Running Test {test_count+1}/{num_tests}: {nm} ***") 
                 t_start_s = time.runtime_start()
                 dut.testing_unit_start(test)
                 test.run(dut)
                 if test.expect_fail: 
                     num_failures += 1
-                    dut._log.error(f"*** {nm} expected fail, so PASS ***")
+                    log.error(f"*** {nm} expected fail, so PASS ***")
                 else:
-                    dut._log.warn(f"*** Test '{nm}' PASS ***")
+                    log.warning(f"*** Test '{nm}' PASS ***")
             except KeyboardInterrupt:
                 test.failed = True 
-                test.failed_msg = 'Keyboard interrupt'
+                test.failed_msg = f'Keyboard interrupt @ {SystemTime.current()}'
                 num_failures += 1
             except Exception as e:
                 test.failed = True
-                dut._log.error(exception_as_str(e))
+                log.error(exception_as_str(e))
                 if len(e.args):
-                    dut._log.error(f"T*** Test '{nm}' FAIL: {e.args[0]} ***")
+                    log.error(f"T*** Test '{nm}' FAIL: {e.args[0]} {e}***")
                     if e.args[0] is None or not e.args[0]:
                         test.failed_msg = ''
                     else:
@@ -95,8 +104,14 @@ class Runner:
                 num_failures += 1
                 
             test.real_time = time.runtime_delta_secs(t_start_s)
-            steps_per_sec = (1/Clock.get_shortest_event_interval().time_in('sec'))/test.real_time
-            dut._log.info(f'Ran @ {steps_per_sec:.2f} steps/s')
+            shortest_interval = Clock.get_shortest_event_interval()
+            if shortest_interval is None:
+                log.warning('No clocks in test')
+            else:
+                steps_per_sec = (1/shortest_interval.time_in('sec'))/test.real_time
+                log.info(f'Ran @ {steps_per_sec:.2f} steps/s')
+                steps_p_sec_tot += steps_per_sec
+                num_stepps_avged += 1
             test.run_time = SystemTime.current()
             dut.testing_unit_done(test)
             
@@ -105,13 +120,13 @@ class Runner:
         
         
         if num_failures:
-            dut._log.warn(f"{num_failures}/{len(self.test_names)} tests failed")
+            log.warning(f"{num_failures}/{len(self.test_names)} tests failed")
         else:
-            dut._log.info(f"All {len(self.test_names)} tests passed")
+            log.info(f"All {len(self.test_names)} tests passed")
         
-        dut._log.info("*** Summary ***")
+        log.info("*** Summary ***")
         max_name_len = self.SummaryNameFieldLen
-        dut._log.warn(f"\tresult\t{' '*max_name_len}\tsim time\treal time\terror")
+        log.warning(f"\tresult\t{' '*max_name_len}\tsim time\treal time\terror")
         for nm in self.test_names:
             
             if len(nm) < max_name_len:
@@ -122,18 +137,21 @@ class Runner:
             realtime = f'{test.real_time:.4f}s'
             if test.failed:
                 if test.expect_fail:
-                    dut._log.warn(f"\tPASS\t{nm}{spaces}\t{test.run_time}\t{realtime}\tFailed as expected {test.failed_msg}")
+                    log.warning(f"\tPASS\t{nm}{spaces}\t{test.run_time}\t{realtime}\tFailed as expected {test.failed_msg}")
                 else:
-                    dut._log.error(f"\tFAIL\t{nm}{spaces}\t{test.run_time}\t{realtime}\t{test.failed_msg}")
+                    log.error(f"\tFAIL\t{nm}{spaces}\t{test.run_time}\t{realtime}\t{test.failed_msg}")
             else:
                 if self.tests_to_run[nm].skip:
-                    dut._log.warn(f"\tSKIP\t{nm}{spaces}\t--")
+                    log.warning(f"\tSKIP\t{nm}{spaces}\t--")
                 else:
                     if test.expect_fail:
-                        dut._log.error(f"\tFAIL\t{nm}{spaces}\t{test.run_time}\t{realtime}\tpassed but expect_fail = True")
+                        log.error(f"\tFAIL\t{nm}{spaces}\t{test.run_time}\t{realtime}\tpassed but expect_fail = True")
                     else:
-                        dut._log.warn(f"\tPASS\t{nm}{spaces}\t{test.run_time}\t{realtime}")
-        dut._log.info(f"Real run time: {all_tests_runs_time:.4f}s")
+                        log.warning(f"\tPASS\t{nm}{spaces}\t{test.run_time}\t{realtime}")
+        stpss_avg = 0
+        if num_stepps_avged:
+            stpss_avg =  steps_p_sec_tot / num_stepps_avged
+        log.info(f"Real run time: {all_tests_runs_time:.4f}s ({stpss_avg:.2f} steps/s avg)")
         
     def __len__(self):
         return len(self.tests_to_run)

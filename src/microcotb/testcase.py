@@ -37,7 +37,7 @@ class TestCase:
         
     def run(self, dut):
         if self.skip:
-            dut._log.warn(f"{self.name} skip=True")
+            dut._log.warning(f"{self.name} skip=True")
             return 
         func = self.function
         try:
@@ -47,7 +47,7 @@ class TestCase:
             if not self.expect_fail:
                 raise e
             dut._log.error(exception_as_str(e))
-            dut._log.warn("Failure was expected")
+            dut._log.warning("Failure was expected")
     @property 
     def run_time(self) -> TimeValue:
         return self._run_time

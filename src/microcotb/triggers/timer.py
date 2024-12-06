@@ -9,6 +9,9 @@ from microcotb.triggers.awaitable import Awaitable
 from microcotb.clock import Clock
 from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
+import microcotb.log as logging 
+
+log = logging.getLogger('Timer')
 class Timer(Awaitable):
     DebugTraceLoopCount = 1000
     def __init__(self, time:int, units:str):
@@ -29,7 +32,7 @@ class Timer(Awaitable):
         increment_count = 0
         while SystemTime.current() < target_time:
             if self.DebugTraceLoopCount and increment_count % self.DebugTraceLoopCount == 0:
-                print(f"Systime: {SystemTime.current()} (target {target_time})")
+                log.info(f"Systime: {SystemTime.current()} (target {target_time})")
             
             increment_count += 1
             SystemTime.advance(time_increment)

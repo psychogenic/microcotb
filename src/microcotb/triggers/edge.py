@@ -44,12 +44,12 @@ class Edge(Awaitable):
             self._cond_check_count += 1
             if self.DebugTraceLoopCount is not None and \
                 self._cond_check_count % self.DebugTraceLoopCount == 0:
-                self.logger.info(f"SystemTime {SystemTime.current()}")
+                self.logger.debug(f"SystemTime {SystemTime.current()}")
             SystemTime.advance(self.time_increment)
             
             
         if self.DebugTraceLoopCount is not None:
-            self.logger.info(f"Done at {SystemTime.current()}")
+            self.logger.debug(f"Done at {SystemTime.current()}")
         return
     
     
