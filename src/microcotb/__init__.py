@@ -8,8 +8,10 @@ RunnerModuleName = 'default'
 def start_soon(c):
     pass
 
-def get_runner(sim=None):
-    return Runner.get(get_caller_file(2))
+def get_runner(module_name:str=None, sim=None):
+    if module_name is None:
+        module_name = get_caller_file(2)
+    return Runner.get(module_name)
 
 def get_caller_file(back_levels:int=1):
     if not Features.ExceptionsHaveTraceback:

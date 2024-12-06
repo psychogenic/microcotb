@@ -33,8 +33,9 @@ class Wire(NoopSignal):
 
 
 class SliceWrapper:
-    def __init__(self, port, idx_or_start:int, slice_end:int=None):
-        self._port = port 
+    def __init__(self, name:str, io:IO, idx_or_start:int, slice_end:int=None):
+        self._io = io 
+        self._name = name
         # can't create slice() on uPython...
         self.slice_start = idx_or_start
         self.slice_end = slice_end
@@ -42,28 +43,74 @@ class SliceWrapper:
     @property 
     def value(self):
         if self.slice_end is not None:
-            return self._port[self.slice_start:self.slice_end]
+            return self._io[self.slice_start:self.slice_end]
         
-        return int(self._port[self.slice_start])
+        return self._io[self.slice_start]
     
     @value.setter 
     def value(self, set_to:int):
         if self.slice_end is not None:
-            self._port[self.slice_start:self.slice_end] = set_to
+            self._io[self.slice_start:self.slice_end] = set_to
         else:
-            self._port[self.slice_start] = set_to
+            self._io[self.slice_start] = set_to
+            
+        
     def __int__(self):
         return int(self.value)
-    def __repr__(self):
-        if self.slice_end is not None:
-            return str(self._port[self.slice_start:self.slice_end])
-        else:
-            return str(self._port[self.slice_start])
-
-
+        
             
+    def __repr__(self):
+        nm = self._io.port.name 
+        if self.slice_end is not None:
+            return f'<Slice {self._name} {nm}[{self.slice_start}:{self.slice_end}] ({hex(self)})>'
+        return f'<Slice {self._name} {nm}[{self.slice_start}] ({hex(self)})>'
+        
+    def __str__(self):
+        if self.slice_end is not None:
+            return str(self._io[self.slice_start:self.slice_end])
+        else:
+            return str(self._io[self.slice_start])
 
-class DUTWrapper:
+
+class IOInterface:
+    def __init__(self):
+        pass 
+    
+    @classmethod
+    def new_slice_attribute(cls, name:str, source:IO, idx_or_start:int, slice_end:int=None):
+        return SliceWrapper(name, source, idx_or_start, slice_end)
+    
+    @classmethod
+    def new_bit_attribute(cls, name:str, source:IO, bit_idx:int):
+        return SliceWrapper(name, source, bit_idx)
+    
+    def add_slice_attribute(self, name:str, source:IO, idx_or_start:int, slice_end:int=None):
+        slc = self.new_slice_attribute(name, source, idx_or_start, slice_end)
+        setattr(self, name, slc)
+        
+    def add_bit_attribute(self, name:str, source:IO, bit_idx:int):
+        bt = self.new_bit_attribute(name, source, bit_idx)
+        setattr(self, name, bt)
+        
+    def add_port(self, name:str, width:int, reader_function=None, writer_function=None):
+        setattr(self, name, IO(name, width, reader_function, writer_function))
+    
+    def available_io(self):
+        # get anything that's IO or IO-based/derived
+        return list(filter(lambda x: isinstance(x, (IO, SliceWrapper)), 
+                           map(lambda a: getattr(self, a), 
+                               filter(lambda g: not g.startswith('_'), 
+                                      sorted(dir(self))))))
+    
+    
+    def __setattr__(self, name:str, value):
+        if hasattr(self, name) and isinstance(getattr(self, name), (IO, SliceWrapper)):
+            port = getattr(self, name)
+            port.value = value 
+            return
+        super().__setattr__(name, value)
+          
+class DUT(IOInterface):
     def __init__(self, name:str='DUT'):
         self.name = name
         self._log = logging.getLogger(name)
@@ -83,30 +130,6 @@ class DUTWrapper:
         # override if desired
         pass
     
-    @classmethod
-    def new_slice_attribute(cls, source:IO, idx_or_start:int, slice_end:int=None):
-        return SliceWrapper(source, idx_or_start, slice_end)
-    
-    @classmethod
-    def new_bit_attribute(cls, source:IO, bit_idx:int):
-        return SliceWrapper(source, bit_idx)
-    
-    def add_slice_attribute(self, name:str, source:IO, idx_or_start:int, slice_end:int=None):
-        slc = self.new_slice_attribute(source, idx_or_start, slice_end)
-        setattr(self, name, slc)
-        
-    def add_bit_attribute(self, name:str, source:IO, bit_idx:int):
-        bt = self.new_bit_attribute(source, bit_idx)
-        setattr(self, name, bt)
-        
-        
-    def add_port(self, name:str, width:int, reader_function=None, writer_function=None):
-        setattr(self, name, IO(name, width, reader_function, writer_function))
-        
-class DUT(DUTWrapper):
-    
-    def __init__(self, name:str='DUT'):
-        super().__init__(name)
         
         
     
