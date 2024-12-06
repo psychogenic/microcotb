@@ -270,8 +270,8 @@ def main(dut:DUT = None):
         dut = getDUT()
     dut._log.info(f"enabled neptune project, will test with {runner}")
     
-    dut.is_monitoring = True
-    dut.write_test_vcds_to_dir = '/tmp'
+    # dut.is_monitoring = True
+    # dut.write_test_vcds_to_dir = '/tmp'
     runner.test(dut)
 
 

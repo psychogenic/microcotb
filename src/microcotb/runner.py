@@ -102,7 +102,6 @@ class Runner:
                         test.failed_msg = ''
                     else:
                         test.failed_msg = e.args[0]
-                    
                 num_failures += 1
                 
             test.real_time = time.runtime_delta_secs(t_start_s)

@@ -151,18 +151,47 @@ To get started you need three things:
 To dive right in can see a [loopback/counter demo](https://github.com/psychogenic/microcotb/tree/main/src/examples/dummy/tb.py) you can run right now by doing
 
 ```
->>> import examples.dummy as test
+$ python examples/dummy/tb.py
+...
+[20] runner *** Summary ***
+[30] runner     result                                           sim time        real time       error
+[30] runner     PASS    test_loopback                            2.5900ms        0.0074s
+[30] runner     PASS    test_counter                             1.0400ms        0.0025s
+[30] runner     PASS    test_edge_triggers                       665.0000us      0.0021s
+[30] runner     PASS    test_should_fail                         0.0000ns        0.0003s Failed as expected 
+[30] runner     SKIP    test_will_skip                           --
+[30] runner     PASS    tmout/t=50/clk_period=12                 54.0000us       0.0003s
+[30] runner     PASS    tmout/t=50/clk_period=10                 50.0000us       0.0003s
+[30] runner     PASS    tmout/t=50/clk_period=60                 60.0000us       0.0002s
+[40] runner     FAIL    tmout/t=100/clk_period=12                102.0000us      0.0003s Timeout at 102.0000us
+[40] runner     FAIL    tmout/t=100/clk_period=10                100.0000us      0.0003s Timeout at 100.0000us
+[40] runner     FAIL    tmout/t=100/clk_period=60                120.0000us      0.0003s Timeout at 120.0000us
+[40] runner     FAIL    tmout/t=200/clk_period=12                102.0000us      0.0004s Timeout at 102.0000us
+[40] runner     FAIL    tmout/t=200/clk_period=10                100.0000us      0.0003s Timeout at 100.0000us
+[40] runner     FAIL    tmout/t=200/clk_period=60                120.0000us      0.0002s Timeout at 120.0000us
+[30] runner     PASS    test_timer                               1.0000ms        0.0061s
+[20] runner Real run time: 0.0217s (355082330.16 steps/s avg)
+```
+
+On the desktop, it's blazingly fast.  On uPython, not as much, but it runs, here the [factory test project tb](https://github.com/TinyTapeout/tt-micropython-firmware/blob/v2.0-dev/src/examples/tt_um_factory_test/tt_um_factory_test.py)
+
+```
 >>> test.run()
 
 # ...
-loopcount:1/6 tests failed
-loopcount:*** Summary ***
-loopcount:      PASS    test_loopback
-loopcount:      PASS    test_counter
-loopcount:      PASS    test_edge_triggers
-loopcount:      PASS    test_should_fail        Failed as expected 
-loopcount:      SKIP    test_will_skip
-loopcount:      PASS    test_timer
+runner: *** Summary ***
+runner:         result                                           sim time        real time       error
+runner:         PASS    test_loopback                            2.6600ms        2.0000s
+runner:         PASS    test_timeout/timer_t=101/clk_period=10   100.0000us      0.0000s Failed as expected 
+runner:         PASS    test_timeout/timer_t=101/clk_period=125  125.0000us      0.0000s Failed as expected 
+runner:         PASS    test_timeout/timer_t=200/clk_period=10   100.0000us      0.0000s Failed as expected 
+runner:         PASS    test_timeout/timer_t=200/clk_period=125  125.0000us      0.0000s Failed as expected 
+runner:         PASS    test_should_fail                         0.0000ns        0.0000s Failed as expected 
+runner:         PASS    test_counter                             2.6800ms        3.0000s
+runner:         PASS    test_edge_triggers                       744.9999us      1.0000s
+runner:         SKIP    test_will_skip                           --
+runner: Real run time: 6.0000s (122222.22 steps/s avg)
+
 ```
 
   

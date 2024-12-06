@@ -39,7 +39,8 @@ class TinyTapeoutDUT(dut_sub.DUT):
                  start_readonly:bool=False):
         self.start_readonly = start_readonly
         super().__init__(serial_port, name, auto_discover)
-        self.ena = NoopSignal('ena') # give it a default 'ena' that does nothing
+        if not hasattr(self, 'ena'):
+            self.ena = NoopSignal('ena') # give it a default 'ena' that does nothing
         
     def discover(self):
         super().discover()
