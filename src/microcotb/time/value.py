@@ -15,6 +15,15 @@ class TimeConverter:
                 'sec': 1
             }
     Units = ['fs', 'ps', 'ns', 'us', 'ms', 'sec']
+    UnitIndices = {
+            'fs': 0,
+            'ps': 1,
+            'ns': 2,
+            'us': 3,
+            'ms': 4,
+            'sec': 5
+        
+        }
     
     @classmethod 
     def scale(cls, units:str):
@@ -35,10 +44,7 @@ class TimeConverter:
     
     @classmethod 
     def units_step_down(cls, units:str):
-        try:
-            idx = cls.Units.index(units)
-        except:
-            return None 
+        idx = cls.UnitIndices[units]
         
         if idx < 1:
             return None 
@@ -46,10 +52,7 @@ class TimeConverter:
     
     @classmethod 
     def units_step_up(cls, units:str):
-        try:
-            idx = cls.Units.index(units)
-        except:
-            return None 
+        idx = cls.UnitIndices[units]
         
         if idx >= (len(cls.Units) - 1):
             return None 
@@ -60,18 +63,19 @@ class TimeConverter:
 class TimeValue:
     ReBaseStringUnits = False # go up units in str repr
     BaseUnits = 'ns'
+    BaseUn = TimeConverter.UnitIndices['ns']
     def __init__(self, time:int, units:str):
         self._time = time 
         self._units = units
-        self.scale = TimeConverter.scale(units)
+        self._un = TimeConverter.UnitIndices[units]
         self._as_float = None
         self._store_baseunits()
         if units != self.BaseUnits and \
-            TimeConverter.UnitScales[units] < TimeConverter.UnitScales[self.BaseUnits]:
+            TimeConverter.UnitIndices[units] < TimeConverter.UnitIndices[self.BaseUnits]:
             raise RuntimeError(f'Reduce TimeValue.BaseUnits to {units}')
         
     def _store_baseunits(self):
-        if self.units == self.BaseUnits:
+        if self._un == self.BaseUn:
             self._t_baseunits = self.time 
         else:
             self._t_baseunits = int(TimeConverter.rescale(self.time, self.units, self.BaseUnits))
@@ -89,10 +93,14 @@ class TimeValue:
     @property 
     def units(self):
         return self._units 
+    @property 
+    def scale(self):
+        return TimeConverter.UnitScales[self._units]
+    
     @units.setter 
     def units(self, set_to:str):
         self._units = set_to 
-        self.scale = TimeConverter.scale(set_to)
+        self._un = TimeConverter.UnitIndices[set_to]
         self._as_float = None
         
     def time_in(self, units:str):
@@ -106,9 +114,6 @@ class TimeValue:
             return None 
         return TimeValue(self.time*1000, smaller_units)
         
-    def _directly_comparable(self, other):
-        return other.units == self.units 
-    
     def __float__(self):
         if self._as_float is None:
             self._as_float = self.time*self.scale
@@ -129,7 +134,7 @@ class TimeValue:
         return self._t_baseunits == other._t_baseunits
     
     def __iadd__(self, other):
-        if self._directly_comparable(other):
+        if self._un == other._un:
             self.time += other.time
             self._store_baseunits()
             return self
@@ -139,7 +144,7 @@ class TimeValue:
         return self
     
     def __add__(self, other):
-        if self._directly_comparable(other):
+        if self._un == other._un:
             return TimeValue(self.time + other.time, self.units)
         
         new_time = self.time + TimeConverter.rescale(other.time, other.units, self.units)
@@ -160,7 +165,10 @@ class TimeValue:
         return f'{v.time:.4f}{v.units}'
     
     def __truediv__(self, other):
-        other_conv = TimeConverter.rescale(other.time, other.units, self.units)
+        if self._un == other._un:
+            other_conv = other.time
+        else:
+            other_conv = TimeConverter.rescale(other.time, other.units, self.units)
         return self.time / other_conv
     
     def __mul__(self, other:int):
