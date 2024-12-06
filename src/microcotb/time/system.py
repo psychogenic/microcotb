@@ -6,7 +6,6 @@ Created on Nov 23, 2024
 '''
 from microcotb.time.value import TimeValue, TimeConverter
 from microcotb.clock import Clock
-import microcotb.utils.tm as time 
 
 class SystemTimeout(Exception):
     pass
