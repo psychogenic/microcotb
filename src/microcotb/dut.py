@@ -91,9 +91,13 @@ class DUTWrapper:
     def new_bit_attribute(cls, source:IO, bit_idx:int):
         return SliceWrapper(source, bit_idx)
     
-    def add_slice_attribute(self, source:IO, name:str, idx_or_start:int, slice_end:int=None):
+    def add_slice_attribute(self, name:str, source:IO, idx_or_start:int, slice_end:int=None):
         slc = self.new_slice_attribute(source, idx_or_start, slice_end)
         setattr(self, name, slc)
+        
+    def add_bit_attribute(self, name:str, source:IO, bit_idx:int):
+        bt = self.new_bit_attribute(source, bit_idx)
+        setattr(self, name, bt)
         
         
     def add_port(self, name:str, width:int, reader_function=None, writer_function=None):
