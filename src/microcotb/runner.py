@@ -111,8 +111,8 @@ class Runner:
                 if test.real_time:
                     steps_per_sec = (1/shortest_interval.time_in('sec'))/test.real_time
                     log.info(f'Ran @ {steps_per_sec:.2f} steps/s')
-                steps_p_sec_tot += steps_per_sec
-                num_stepps_avged += 1
+                    steps_p_sec_tot += steps_per_sec
+                    num_stepps_avged += 1
             test.run_time = SystemTime.current()
             dut.testing_unit_done(test)
             
