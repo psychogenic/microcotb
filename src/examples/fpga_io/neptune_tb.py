@@ -25,14 +25,22 @@ class NeptuneDUT(tt_dut.TinyTapeoutDUT):
     def __init__(self, serial_port:str):
         super().__init__(serial_port, 'Neptune', auto_discover=True)
         # inputs
-        self.display_single_select = self.new_bit_attribute(self.ui_in, 7)
-        self.display_single_enable = self.new_bit_attribute(self.ui_in, 6)
-        self.input_pulse = self.new_bit_attribute(self.ui_in, 5)
-        self.clk_config = self.new_slice_attribute(self.ui_in, 4, 2) # tt.ui_in[4:2]
+        if not hasattr(self, 'ui_in'):
+            raise RuntimeError('Does not look like a TT DUT')
+        self.add_bit_attribute('display_single_select',
+                                    self.ui_in, 7)
+        self.add_bit_attribute('display_single_enable',
+                                    self.ui_in, 6)
+        self.add_bit_attribute('input_pulse', 
+                                    self.ui_in, 5)
+        # tt.ui_in[4:2]
+        self.add_slice_attribute('clk_config', 
+                                    self.ui_in, 4, 2) 
         # outputs
-        self.prox_select = self.new_bit_attribute(self.uo_out, 7)
-        self.segments = self.new_slice_attribute(self.uo_out, 6, 0) # tt.uo_out[6:0]
-        
+        self.add_bit_attribute('prox_select', self.uo_out, 7)
+        # tt.uo_out[6:0]
+        self.add_slice_attribute('segments', self.uo_out, 6, 0) 
+
 
 def main(serial_port='/dev/ttyACM0'):
     logging.basicConfig(level=logging.DEBUG)

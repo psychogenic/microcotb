@@ -13,6 +13,7 @@ from microcotb.triggers import ClockCycles # RisingEdge, FallingEdge, Timer,
 import hashlib
 import random 
 
+cocotb.set_runner_scope(__name__)
 
 GateLevelTest = False
 DoLongLongTest = False
@@ -596,16 +597,16 @@ class ShamanDUT(tt_dut.TinyTapeoutDUT):
         self.databyteIn = self.ui_in
         self.resultbyteOut = self.uo_out
         
-        self.resultReady = self.new_bit_attribute(self.uio_out, 0)
-        self.beginProcessingDataBlock = self.new_bit_attribute(self.uio_out, 1)
+        self.resultReady = self.new_bit_attribute('resultReady', self.uio_out, 0)
+        self.beginProcessingDataBlock = self.new_bit_attribute('beginProcessingDataBlock', self.uio_out, 1)
         
-        self.parallelLoading = self.new_bit_attribute(self.uio_in, 2)
-        self.resultNext = self.new_bit_attribute(self.uio_in, 3)
+        self.parallelLoading = self.new_bit_attribute('parallelLoading', self.uio_in, 2)
+        self.resultNext = self.new_bit_attribute('resultNext', self.uio_in, 3)
         
-        self.busy = self.new_bit_attribute(self.uio_out, 4)
-        self.processingReceivedDataBlock = self.new_bit_attribute(self.uio_out, 5)
-        self.start = self.new_bit_attribute(self.uio_in, 6)
-        self.clockinData = self.new_bit_attribute(self.uio_in, 7)
+        self.busy = self.new_bit_attribute('busy', self.uio_out, 4)
+        self.processingReceivedDataBlock = self.new_bit_attribute('processingReceivedDataBlock', self.uio_out, 5)
+        self.start = self.new_bit_attribute('start', self.uio_in, 6)
+        self.clockinData = self.new_bit_attribute('clockinData', self.uio_in, 7)
         
         self.oe_bidir_setting = 0b11001100
         
@@ -621,7 +622,7 @@ def main(ser_port:str='/dev/ttyACM0'):
     
     dut.uio_oe.value = dut.oe_bidir_setting
     
-    runner = cocotb.get_runner()
+    runner = cocotb.get_runner(__name__)
     dut._log.info(f"enabled shaman project. Will test with\n{runner}")
     runner.test(dut)
 

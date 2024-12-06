@@ -3,18 +3,34 @@ from .decorators import test, parametrize
 from microcotb.platform import Features
 import os
 
-RunnerModuleName = 'default'
+RunnerModuleName = None
+
+__version__ = "0.5.5"
 
 def start_soon(c):
     pass
 
+def set_runner_scope(scope:str):
+    global RunnerModuleName
+    RunnerModuleName = scope
+    
+def get_runner_scope():
+    global RunnerModuleName
+    return RunnerModuleName
+    
 def get_runner(module_name:str=None, sim=None):
     if module_name is None:
         module_name = get_caller_file(2)
     return Runner.get(module_name)
 
+def get_caller_except(msg:str='boink'):
+    raise Exception(msg)
+
 def get_caller_file(back_levels:int=1):
     if not Features.ExceptionsHaveTraceback:
+        return RunnerModuleName
+    
+    if RunnerModuleName is not None:
         return RunnerModuleName
     
     try:

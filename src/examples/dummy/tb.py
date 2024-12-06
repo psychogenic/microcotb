@@ -11,6 +11,8 @@ from microcotb.clock import Clock
 from microcotb.triggers import ClockCycles, Timer, RisingEdge, FallingEdge
 from microcotb.utils import get_sim_time
 
+cocotb.set_runner_scope(__name__)
+
 async def reset(dut):
     # Reset
     dut._log.info("Reset")
@@ -136,7 +138,7 @@ def main():
         def __init__(self):
             super().__init__('loopcount')
             # inputs
-            self.some_bit = self.new_bit_attribute(self.output, 5)
+            self.some_bit = self.new_bit_attribute('some_bit', self.output, 5)
 
     # do any required system setup
     

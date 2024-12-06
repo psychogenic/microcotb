@@ -34,7 +34,7 @@ class TinyTapeoutDUT(dut_sub.DUT):
     
     '''
      
-    def __init__(self, serial_port:str=sub_dut.DefaultPort, 
+    def __init__(self, serial_port:str=dut_sub.DefaultPort, 
                  name:str='FPGA', auto_discover:bool=True,
                  start_readonly:bool=False):
         self.start_readonly = start_readonly
@@ -79,6 +79,8 @@ class TinyTapeoutDUT(dut_sub.DUT):
                 
     @property 
     def uio_in(self) -> IO:
+        if not hasattr(self, 'uio'):
+            return None
         return self.uio
     
     @uio_in.setter 
@@ -87,6 +89,8 @@ class TinyTapeoutDUT(dut_sub.DUT):
         
     @property 
     def uio_out(self) -> IO:
+        if not hasattr(self, 'uio'):
+            return None
         return self.uio
     
 

@@ -17,6 +17,8 @@ import microcotb as cocotb
 import microcotb.log as logging
 from microcotb.time.value import TimeValue
 
+cocotb.set_runner_scope(__name__)
+
 displayNotes = {
             'NA':     0b00000010, # -
             'A':      0b11101110, # A
@@ -263,7 +265,7 @@ async def success_test(dut):
 def main(dut:DUT = None):
     TimeValue.ReBaseStringUnits = True
     logging.basicConfig(level=logging.DEBUG)
-    runner = cocotb.get_runner()
+    runner = cocotb.get_runner(__name__)
     if dut is None:
         dut = getDUT()
     dut._log.info(f"enabled neptune project, will test with {runner}")

@@ -20,5 +20,5 @@ Features.FunctionsHaveQualifiedNames = hasattr(dummyfunc, '__qualname__')
 try:
     raise Exception('boink')
 except Exception as e:
-    if not hasattr(e, '__traceback__'):
+    if hasattr(e, '__traceback__'):
         Features.ExceptionsHaveTraceback = True

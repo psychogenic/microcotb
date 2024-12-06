@@ -17,6 +17,10 @@ from microcotb.utils import get_sim_time
 
 from examples.simple_usb_bridge.dut_sub import DUT, DefaultPort
 
+
+cocotb.set_runner_scope(__name__)
+
+
 async def reset_and_enable(dut, reset_hold_time:int=50):
     
     # startup disabled
@@ -158,7 +162,7 @@ async def test_parse(dut:DUT):
 def main(dut:DUT = None):
     TimeValue.ReBaseStringUnits = True
     logging.basicConfig(level=logging.INFO)
-    runner = cocotb.get_runner()
+    runner = cocotb.get_runner(__name__)
     if dut is None:
         dut = getDUT()
     dut._log.info(f"enabled SPI Parser (PSYM Reader) project, will test with {runner}")

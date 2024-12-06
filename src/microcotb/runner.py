@@ -12,18 +12,20 @@ import microcotb.utils.tm as time
 import microcotb.platform as plat
 import microcotb.log as logging
 _RunnerSingletonByName = None
+
+
 class Runner:
     SummaryNameFieldLen = 40
     @classmethod 
-    def get(cls, name:str):
+    def get(cls, test_module:str):
         global _RunnerSingletonByName
         if _RunnerSingletonByName is None:
             _RunnerSingletonByName = dict() 
         
-        if name not in _RunnerSingletonByName:   
-            _RunnerSingletonByName[name] = cls()
+        if test_module not in _RunnerSingletonByName:   
+            _RunnerSingletonByName[test_module] = cls()
             
-        return _RunnerSingletonByName[name]
+        return _RunnerSingletonByName[test_module]
     
     
     

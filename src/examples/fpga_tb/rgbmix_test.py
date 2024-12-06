@@ -7,6 +7,9 @@ from microcotb.clock import Clock
 from microcotb.triggers import RisingEdge, FallingEdge, ClockCycles
 from examples.fpga_tb.rgbmix_encoder import Encoder
 
+
+cocotb.set_runner_scope(__name__)
+
 clocks_per_phase = 10
 max_count = 255
 
@@ -109,10 +112,10 @@ async def test_finishoff(dut):
 
 
 import logging
-from examples.simple_usb_bridge.dut import DUT
+from examples.simple_usb_bridge.dut_sub import DUT
 def main():
     logging.basicConfig(level=logging.INFO)
-    runner = cocotb.get_runner()
+    runner = cocotb.get_runner(__name__)
     dut = DUT('/dev/ttyACM0', 'RGBMX')
     dut._log.info(f"enabled rgbmixer project, will test with {runner}")
     runner.test(dut)

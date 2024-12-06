@@ -12,6 +12,8 @@ from microcotb.clock import Clock
 from microcotb.triggers import RisingEdge, FallingEdge, ClockCycles, Timer
 from microcotb.utils import get_sim_time
 
+cocotb.set_runner_scope(__name__)
+
 @cocotb.test()
 async def test_loopback(dut):
     dut._log.info("Start")
@@ -96,7 +98,7 @@ async def test_timeout(dut, clk_period:int, timer_t:int):
 def main(dut:TinyTapeoutDUT = None):
     TimeValue.ReBaseStringUnits = True
     logging.basicConfig(level=logging.DEBUG)
-    runner = cocotb.get_runner()
+    runner = cocotb.get_runner(__name__)
     if dut is None:
         dut = TinyTapeoutDUT('/dev/ttyACM0', 'FactoryTest', auto_discover=True)
     dut._log.info(f"enabled neptune project, will test with {runner}")
@@ -111,3 +113,6 @@ def main(dut:TinyTapeoutDUT = None):
 def getDUT(port:str='/dev/ttyACM0', start_readonly:bool=False):
     dut = TinyTapeoutDUT(port, 'TT', auto_discover=True, start_readonly=start_readonly)
     return dut
+
+if __name__ == '__main__':
+    main()

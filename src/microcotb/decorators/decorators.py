@@ -8,8 +8,10 @@ from .parametrized import Parameterized
 from microcotb.runner import Runner, TestCase
 import microcotb.platform as plat
 import microcotb
+import microcotb.log as logging
 import os 
 
+log = logging.getLogger(__name__)
 
 def test(func=None, *,
     timeout_time: float = None,
@@ -21,6 +23,7 @@ def test(func=None, *,
     name: str = None):
     
     runnerName = microcotb.get_caller_file(2)
+    log.warn(f'test() runner name {runnerName}')
     def my_decorator_func(func):
         runner = Runner.get(runnerName) 
         if name is None:
