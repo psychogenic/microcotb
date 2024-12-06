@@ -255,6 +255,30 @@ class LogicArray(ArrayLike):
         return int(self) < int(other)
     def __le__(self, other):
         return int(self) <= int(other)
+    
+    def __add__(self, other):
+        if isinstance(other, (int, float)):
+            return self.to_unsigned() + other
+        if isinstance(other, LogicArray):
+            return self.to_unsigned() + int(other)
+            
+        return self.to_unsigned() + other
+        
+    def __sub__(self, other):
+        if isinstance(other, (int, float)):
+            return self.to_unsigned() - other
+        if isinstance(other, LogicArray):
+            return self.to_unsigned() - int(other)
+            
+        return self.to_unsigned() - other
+        
+    def __mul__(self, other):
+        if isinstance(other, (int, float)):
+            return self.to_unsigned() * other
+        if isinstance(other, LogicArray):
+            return self.to_unsigned() * int(other)
+        
+        return self.to_unsigned() + int(other)
         
 
     @property
