@@ -13,7 +13,6 @@ from microcotb.triggers import ClockCycles # RisingEdge, FallingEdge, Timer,
 import hashlib
 import random 
 
-cocotb.set_runner_scope(__name__)
 
 GateLevelTest = False
 DoLongLongTest = False
@@ -612,23 +611,3 @@ class ShamanDUT(tt_dut.TinyTapeoutDUT):
         
         self.oe_bidir_setting = 0b11001100
         
-
-import logging
-def main(ser_port:str='/dev/ttyACM0'):
-    from microcotb.time.value import TimeValue
-    TimeValue.ReBaseStringUnits = True # want pretty strings
-
-    logging.basicConfig(level=logging.INFO)
-    
-    dut = ShamanDUT(ser_port)
-    dut.is_monitoring = True
-    dut.sync_change_dumps =  True
-    
-    dut.uio_oe.value = dut.oe_bidir_setting
-    
-    runner = cocotb.get_runner(__name__)
-    dut._log.info(f"enabled shaman project. Will test with\n{runner}")
-    runner.test(dut)
-
-if __name__ == '__main__':
-    main()
