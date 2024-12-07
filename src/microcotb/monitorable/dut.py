@@ -22,8 +22,7 @@ import microcotb.dut
 from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
 
-from examples.common.signal import Signal
-from examples.common.vcd_writer import Event, VCD
+from microcotb.monitorable.vcd_writer import Event, VCD
 from microcotb.runner import TestCase
 
 
@@ -58,35 +57,6 @@ class StateChangeReport:
         return f"StateChangeReport ({len(outlist)} ports in {self._num_changes} events):\n{sep.join(outlist)}"
             
   
-
-class SUBIO(IO):
-    '''
-        Derive from IO, mostly to implement our between-test reset() optimization
-    '''
-    def __init__(self, sig:Signal, name:str, width:int, read_signal_fn=None, write_signal_fn=None):
-        super().__init__(name, width, read_signal_fn, write_signal_fn)
-        self._sub_signal = sig
-        
-    
-    def reset(self):
-        self._sub_signal.reset()
-        
-    @property
-    def is_writeable(self) -> bool:
-        return self._sub_signal.is_writeable
-    
-    
-    def toggle(self):
-        if int(self.value):
-            self.value = 1
-        else:
-            self.value = 0
-            
-    def clock(self, num_times:int = 1):
-        for _i in range(num_times):
-            self.toggle()
-            self.toggle()
-
 class MonitorableDUT(microcotb.dut.DUT):
     '''
         A DUT base class that allows for auto-discovery, tracking state changes
@@ -145,7 +115,6 @@ class MonitorableDUT(microcotb.dut.DUT):
     
     
     def testing_will_begin(self):
-        # use auto-discover instead self.discover()
         super().testing_will_begin()
         if self.write_vcd_enabled:
             self._log.warning("VCD writes enabled")
@@ -154,7 +123,7 @@ class MonitorableDUT(microcotb.dut.DUT):
                 return 
             
             if self.is_monitoring:
-                # so we can capture initial state
+                # so we can capture initial state without overwriting it
                 SystemTime.ResetTime = TimeValue(1, TimeValue.BaseUnits)
             else:
                 self._log.warning(f"Request to write VCDs to '{self.write_test_vcds_to_dir}'--but NO monitoring on.")

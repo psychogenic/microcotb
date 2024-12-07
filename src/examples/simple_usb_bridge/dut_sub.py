@@ -16,11 +16,10 @@ import serial
 DefaultPort = '/dev/ttyACM0'
 
 import microcotb.log as logging
-from examples.common.signal import SUBSignal, SerialStream
+from examples.simple_usb_bridge.signal import SUBSignal, SerialStream
 from examples.simple_usb_bridge.dut import DUT as BaseDUT
 from examples.simple_usb_bridge.dut import StateChangeReport, SUBIO
 
-loxxxg = logging.getLogger(__name__)
 
 class StateChangeListener:
     
@@ -193,7 +192,22 @@ class DUT(BaseDUT):
             
         
         return self.send_and_recv_command(bts, 100)
-        
+    
+    @property 
+    def sync_change_dumps(self):
+        return self._use_sync_cd
+    
+    @sync_change_dumps.setter
+    def sync_change_dumps(self, set_to:bool):
+        if set_to:
+            self.is_monitoring = True
+            self._use_sync_cd = True
+            bts = b's\x01'
+        else:
+            self._use_sync_cd = False
+            bts = b's\x00'
+        return self.send_and_recv_command(bts, 100)
+    
     def send_and_recv_command(self, cmd:bytearray, max_size:int=500, delay:float=None):
         # print(f"SNR {cmd} {max_size}")
         if self.asynchronous_events:

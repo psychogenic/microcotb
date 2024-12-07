@@ -17,11 +17,8 @@ from microcotb.ports.io import IO
 
 import microcotb.log as logging
 import microcotb.dut 
-from microcotb.time.value import TimeValue
-from microcotb.time.system import SystemTime
-from examples.common.dut_monitorable import MonitorableDUT, StateChangeReport
-from examples.common.signal import Signal
-from examples.common.vcd_writer import Event, VCD
+from microcotb.monitorable.dut import MonitorableDUT, StateChangeReport
+from examples.simple_usb_bridge.signal import Signal
 
 log = logging.getLogger(__name__)
 
