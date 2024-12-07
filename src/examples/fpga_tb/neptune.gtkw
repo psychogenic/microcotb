@@ -1,0 +1,32 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Fri Dec  6 23:10:30 2024
+[*]
+[dumpfile] "/tmp/note_e_exact.vcd"
+[dumpfile_mtime] "Fri Dec  6 23:02:33 2024"
+[dumpfile_size] 86866
+[savefile] "/tmp/neptune.vcd.gtkw"
+[timestart] 85290000
+[size] 2346 1252
+[pos] -1 -1
+*-23.251827 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 273
+[signals_width] 450
+[sst_expanded] 1
+[sst_vpaned_height] 364
+@28
+dut.clk
+dut.clk_config[2:0]
+dut.display_single_enable
+dut.display_single_select
+dut.ena
+dut.input_pulse
+dut.led
+dut.prox_select
+dut.rst_n
+@22
+dut.segments[6:0]
+@29
+dut.disc_state[2:0]
+[pattern_trace] 1
+[pattern_trace] 0
