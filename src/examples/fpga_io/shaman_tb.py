@@ -1,6 +1,9 @@
 '''
 Created on Dec 7, 2024
 
+All the tests themselves are in examples.common, this is just
+specifics about how we're running
+
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
