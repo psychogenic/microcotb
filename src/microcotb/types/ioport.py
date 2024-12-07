@@ -9,7 +9,20 @@ from microcotb.types.range import Range
 import microcotb.log as logging
 log = logging.getLogger(__name__)
 
-class Port:    
+RangeDirection = Range.RANGE_DOWN
+def set_range_direction_verilog():
+    global RangeDirection
+    RangeDirection = Range.RANGE_DOWN
+def set_range_direction_python():
+    global RangeDirection
+    RangeDirection = Range.RANGE_UP
+    
+def range_direction_is_verilog():
+    global RangeDirection
+    return RangeDirection == Range.RANGE_DOWN
+    
+    
+class Port:
     def __init__(self, name:str, width:int, read_signal_fn=None, write_signal_fn=None):
         self.name = name 
         self.width = width
@@ -55,7 +68,11 @@ class Port:
         return self.get_name_string()
     
     def get_range(self):
-        return (self.width-1, 0, Range.RANGE_DOWN)
+        global RangeDirection
+        if RangeDirection == Range.RANGE_DOWN:
+            return (self.width-1, 0, RangeDirection)
+        return (0, self.width-1, Range.RANGE_UP)
+        
     
     def get_const(self) -> bool:
         return False

@@ -16,6 +16,7 @@ class StateChangeReport:
         self._changed_ports[pname] = pvalue
         setattr(self, pname, pvalue)
         self._num_changes += 1
+        return self
     def changed(self):
         return list(self._changed_ports.keys())     
     def all_changes(self):

@@ -16,8 +16,8 @@ handle all the details behind the scenes, in here.
 '''
 import os 
 import re
-from microcotb.ports.io import IO
 
+from microcotb.monitorable.io import MonitorableIO
 import microcotb.dut 
 from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
@@ -48,6 +48,13 @@ class MonitorableDUT(microcotb.dut.DUT):
     def vcd_initial_state_reports(self):
         # override 
         # log.warning("No vcd_initial_state_reports -- override if needed")
+        stch = StateChangeReport()
+        for io in self.available_io():
+            if io.is_readable:
+                stch.add_change(io.port.name, io.value)
+                
+        if len(stch):
+            return [stch]
         return []
     
     
@@ -59,6 +66,9 @@ class MonitorableDUT(microcotb.dut.DUT):
     @is_monitoring.setter
     def is_monitoring(self, set_to:bool):
         self._is_monitoring = True if set_to else False
+        
+        if not self._is_monitoring:
+            self.state_cache.clear()
         
     @property 
     def state_cache(self) -> StateCache:
@@ -114,6 +124,8 @@ class MonitorableDUT(microcotb.dut.DUT):
     def append_state_change(self, stch:StateChangeReport):
         self.queue_state_change(SystemTime.current().clone(), stch)
         
+    def store_queued_events_as_group(self, group_name:str):
+        self.events_of_interest_per_test[group_name] = self.get_queued_state_changes()
         
     def testing_unit_start(self, test:microcotb.dut.TestCase):
         super().testing_unit_start(test)
@@ -136,7 +148,7 @@ class MonitorableDUT(microcotb.dut.DUT):
         if not self.write_test_vcds_to_dir:
             self._log.warning("Write VCD enabled, but NO vcds dir set?!")
             return 
-        self.events_of_interest_per_test[test.name] = self.get_queued_state_changes()
+        self.store_queued_events_as_group(test.name)
         fname = self.vcd_file_name(test)
         fpath = os.path.join(self.write_test_vcds_to_dir, f'{fname}.vcd')
         self._log.warning(f"writing VCD to '{fpath}'")
@@ -145,13 +157,27 @@ class MonitorableDUT(microcotb.dut.DUT):
         except Exception as e:
             self._log.error(f"Issue writing VCD file {fpath}: {e}")
             
-            
+    def aliased_name_for(self, name:str):
+        return name
          
     def get_queued_state_changes(self):
         v = self._queued_state_changes
         self._queued_state_changes = []
         return v
     
+    def dump_queued_events_as_vcd(self, name:str, indir:str=None):
+        if not indir:
+            if not self.write_test_vcds_to_dir:
+                raise RuntimeError('Have not specified a write_test_vcds_to_dir or indir')
+            indir = self.write_test_vcds_to_dir
+        self.store_queued_events_as_group(name) 
+        fpath = os.path.join(indir, f'{name}.vcd')
+        self._log.warning(f"writing VCD to '{fpath}'")
+        try:
+            self.write_vcd(name, fpath)
+        except Exception as e:
+            self._log.error(f"Issue writing VCD file {fpath}: {e}")
+        
     def dump_queued_state_changes(self):
         v = self.get_queued_state_changes()
         for st in v:
