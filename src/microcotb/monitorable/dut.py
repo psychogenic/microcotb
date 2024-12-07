@@ -24,39 +24,9 @@ from microcotb.time.system import SystemTime
 
 from microcotb.monitorable.vcd_writer import Event, VCD
 from microcotb.runner import TestCase
+from microcotb.monitorable.state_tracking import StateChangeReport, StateCache
 
 
-
-class StateChangeReport:
-    '''
-        Base interface for a State Change Report.
-    '''
-    def __init__(self):
-        self._changed_ports = dict()
-        self._num_changes = 0
-    def add_change(self, pname:str, pvalue:int):
-        self._changed_ports[pname] = pvalue
-        setattr(self, pname, pvalue)
-        self._num_changes += 1
-    def changed(self):
-        return list(self._changed_ports.keys())     
-    def all_changes(self):
-        return list(self._changed_ports.items())
-    def __len__(self):
-        return len(self._changed_ports)
-    def __repr__(self):
-        return f'<StateChangeReport with {len(self._changed_ports)} (in {self._num_changes}) changes>'
-    
-    def __str__(self):
-        outlist = []
-        for k,v in self._changed_ports.items():
-            outlist.append(f'{k} = {hex(v)}')
-        if not len(outlist):
-            return 'StateChangeReport: no changes'
-        sep = '\n'
-        return f"StateChangeReport ({len(outlist)} ports in {self._num_changes} events):\n{sep.join(outlist)}"
-            
-  
 class MonitorableDUT(microcotb.dut.DUT):
     '''
         A DUT base class that allows for auto-discovery, tracking state changes
@@ -71,6 +41,7 @@ class MonitorableDUT(microcotb.dut.DUT):
         self._is_monitoring = False
         self._queued_state_changes = []
         self.events_of_interest_per_test = dict()
+        self._last_state_cache = StateCache()
     
     
     # might wish to override (probably)
@@ -89,7 +60,11 @@ class MonitorableDUT(microcotb.dut.DUT):
     def is_monitoring(self, set_to:bool):
         self._is_monitoring = True if set_to else False
         
-        
+    @property 
+    def state_cache(self) -> StateCache:
+        return self._last_state_cache
+    
+    
         
     @property
     def write_vcd_enabled(self):
@@ -141,6 +116,8 @@ class MonitorableDUT(microcotb.dut.DUT):
         
         
     def testing_unit_start(self, test:microcotb.dut.TestCase):
+        super().testing_unit_start(test)
+        self.state_cache.clear()
         if self.write_vcd_enabled \
            and self.write_test_vcds_to_dir \
            and VCD.write_supported() :

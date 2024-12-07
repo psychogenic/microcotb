@@ -21,28 +21,6 @@ from examples.simple_usb_bridge.dut import DUT as BaseDUT
 from examples.simple_usb_bridge.dut import StateChangeReport, SUBIO
 
 
-class StateChangeListener:
-    
-    def __init__(self):
-        self.last_vals = dict() 
-        
-    def clear(self):
-        self.last_vals = dict() 
-        
-    
-    def state_change_event(self, s:StateChangeReport):
-        dontprint = ['clk', 'sck', 'cipo', 'copi']
-        # print(f'LCH{len(s.all_changes())}')
-        for sig, val in s.all_changes():
-            self.last_vals[sig] = val
-            #if sig not in dontprint:
-            #    print(f"ev {sig} {val}")
-            
-    def has(self, name:str):
-        return name in self.last_vals 
-    
-    def get(self, signame:str):
-        return self.last_vals[signame]
             
 
 class SUBStateChangeReport(StateChangeReport):
@@ -92,7 +70,6 @@ class DUT(BaseDUT):
         self.asynchronous_events = True
         self._serial = None
         self._stream = None
-        self._last_state = StateChangeListener()
         super().__init__(name, auto_discover)
     
     @property 
@@ -124,8 +101,8 @@ class DUT(BaseDUT):
             if self.is_monitoring:
                 if self.asynchronous_events:
                     self.poll_statechanges()
-                if self._last_state is not None and self._last_state.has(name):
-                    return self._last_state.get(name)
+                if self.state_cache.has(name):
+                    return self.state_cache.get(name)
                 
             return s.read()
         
@@ -135,15 +112,15 @@ class DUT(BaseDUT):
                 if self.asynchronous_events:
                     self.poll_statechanges()
                 chg = StateChangeReport()
-                chg.add_change(self.aliased_name_for(name), v)
+                alias_name = self.aliased_name_for(name)
+                chg.add_change(alias_name, v)
                 self.append_state_change(chg)
-                if self._last_state is not None:
-                    self._last_state.state_change_event(chg)
+                self.state_cache.set(alias_name, v)
                     
             # print('W', end='')
             s.write(v)
             if self.is_monitoring:
-                if self._last_state and self.asynchronous_events:
+                if self.asynchronous_events:
                     time.sleep(0.0015) # TODO:FIXME sleep
                     while self.serial.out_waiting:
                         time.sleep(0.001) # TODO:FIXME sleep
@@ -168,9 +145,7 @@ class DUT(BaseDUT):
         if self.ser_stream.stream_size:
             self._log.error("TEST UNIT DONE: STREAM HAS")
             self._log.error(self.ser_stream.get_stream())
-            
-        if self._last_state is not None:
-            self._last_state.clear()
+        
         
     @property 
     def is_monitoring(self):
@@ -310,8 +285,7 @@ class DUT(BaseDUT):
             s = SUBStateChangeReport(self.ser_stream.get_state_stream(), self._signal_by_address)
             if len(s):
                 self.append_state_change(s)
-                if self._last_state is not None:
-                    self._last_state.state_change_event(s)
+                self.state_cache.change_event(s)
                  
             return s 
         
