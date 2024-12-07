@@ -387,6 +387,7 @@ async def reset(dut):
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 10) 
     
+    
     dut._log.info("reset done")
     
     await startNewDigest(dut)
@@ -407,6 +408,7 @@ async def waitNotBusy(dut):
     while isBusy and numBusyTicks < 1000:
         dut._log.debug('busy')
         await ClockCycles(dut.clk, 1)
+        #dut._log.info('busy2')
         isBusy = dut.busy.value
         numBusyTicks += 1
         assert numBusyTicks < 1000, f"Busy too long: numticks {numBusyTicks}"
@@ -420,7 +422,7 @@ async def waitOutputReady(dut):
         outputReady = dut.resultReady.value
         await ClockCycles(dut.clk, 1)
         numReadyTicks += 1
-        assert numReadyTicks < 1000, f"Busy too long: numticks {numReadyTicks}"
+        assert numReadyTicks < 1000, f"outputrdy too long: numticks {numReadyTicks}"
         
     return numReadyTicks
 
@@ -619,6 +621,8 @@ def main(ser_port:str='/dev/ttyACM0'):
     logging.basicConfig(level=logging.INFO)
     
     dut = ShamanDUT(ser_port)
+    dut.is_monitoring = True
+    dut.sync_change_dumps =  True
     
     dut.uio_oe.value = dut.oe_bidir_setting
     

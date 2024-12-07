@@ -19,6 +19,7 @@ from microcotb.time.value import TimeValue
 
 cocotb.set_runner_scope(__name__)
 
+
 displayNotes = {
             'NA':     0b00000010, # -
             'A':      0b11101110, # A
@@ -42,12 +43,53 @@ displayProx = {
 SegmentMask = 0xFF
 ProxSegMask = 0xFE
 
+class ClockConfig:
+    Clock1KHz = 0
+    Clock2KHz = 1
+    Clock4KHz = 2
+    Clock3277Hz = 3 # 32.768k / 10
+    Clock10KHz = 4
+    Clock32KHz = 5 # 32.768k
+    Clock40KHz = 6
+    Clock60KHz = 7
+    
+SelectedClockFreq = ClockConfig.Clock4KHz
+    
+ClockConfig = {
+    
+    ClockConfig.Clock1KHz: {
+            'config': ClockConfig.Clock1KHz,
+            'freq': 1000,
+        },
+    ClockConfig.Clock2KHz: {
+        
+            'config': ClockConfig.Clock2KHz,
+            'freq': 2000,
+        },
+    
+    ClockConfig.Clock4KHz: {
+        
+            'config': ClockConfig.Clock4KHz,
+            'freq': 4000,
+        },
+    ClockConfig.Clock10KHz: {
+        
+            'config': ClockConfig.Clock40KHz,
+            'freq': 10000,
+        },
+    ClockConfig.Clock40KHz: {
+        
+            'config': ClockConfig.Clock40KHz,
+            'freq': 40000,
+        }
+}
+
 async def reset(dut):
     dut._log.info(f"reset(dut)")
     dut.display_single_enable.value = 0
     dut.display_single_select.value = 0
     dut.rst_n.value = 1
-    dut.clk_config.value = 1 # 2khz clock
+    dut.clk_config.value = ClockConfig[SelectedClockFreq]['config']
     dut._log.info("hold in reset")
     await ClockCycles(dut.clk, 5)
     dut._log.info("reset done")
@@ -61,9 +103,13 @@ async def reset(dut):
     
 async def startup(dut):
     dut._log.info("starting clock")
-    clock = Clock(dut.clk, 500, units="us")
+    
+    freqHz = ClockConfig[SelectedClockFreq]['freq']
+    
+    periodUs = int(1e6/freqHz)
+    clock = Clock(dut.clk, periodUs, units="us")
     cocotb.start_soon(clock.start())
-    dut._log.info("resetting")
+    dut._log.info(f"resetting, with system clock @ {freqHz}Hz")
     await reset(dut)
     dut.input_pulse.value = 0
             
@@ -101,9 +147,10 @@ async def setup_tuner(dut):
     await startup(dut)
     
 
-async def note_toggle(dut, freq, delta=0, msg="", toggleTime=1.2):
+async def note_toggle(dut, freq, delta=0, msg="", toggleTime=1.2, skip_reset:bool=False):
     dut._log.info(msg)
-    await startup(dut)
+    if not skip_reset:
+        await startup(dut)
     dut._log.info('startup done')
     dispValues = await inputPulsesFor(dut, freq + delta, toggleTime)  
     return dispValues
@@ -149,11 +196,11 @@ async def note_g_highclose(dut):
     
 
 
-async def note_a(dut, delta=0, msg=""):
+async def note_a(dut, delta=0, msg="", skip_reset:bool=False):
     aFreq = 110
     
     dut._log.info(f"A delta {delta}")
-    dispValues = await note_toggle(dut, freq=aFreq, delta=delta, msg=msg);
+    dispValues = await note_toggle(dut, freq=aFreq, delta=delta, msg=msg, skip_reset=skip_reset);
     
     note_target = (displayNotes['A'] & SegmentMask)
     assert dispValues[1] == note_target, f"Note A FAIL: {dispValues[1]} != {note_target}"
@@ -258,8 +305,24 @@ async def note_b_exact(dut):
 async def success_test(dut):
     await note_toggle(dut, freq=20, delta=0, msg="just toggling -- end");
     
+
+@cocotb.test()
+async def note_e_then_a(dut):
+    
+    dut.is_monitoring = True
+    dut.write_vcd_enabled = True
+    dut._log.info("NOTE: delta same as for fat E, but will be close...")
+    dispValues = await note_e(dut, eFreq=330, delta=-7, msg="E exact")
+    assert dispValues[0] == (displayProx['lowclose'] & ProxSegMask) 
     
     
+    dispValues = await note_a(dut, delta=0, msg="A exact", skip_reset=True)
+    
+    target_value =  (displayProx['exact'] & ProxSegMask)
+    assert dispValues[0] == target_value, f"exact fail {dispValues[0]} != {target_value}"
+    dut._log.info("Note A full pass")
+    
+
     
 
 def main(dut:DUT = None):
@@ -270,8 +333,11 @@ def main(dut:DUT = None):
         dut = getDUT()
     dut._log.info(f"enabled neptune project, will test with {runner}")
     
-    # dut.is_monitoring = True
-    # dut.write_test_vcds_to_dir = '/tmp'
+    # enable saving VCDs
+    dut.is_monitoring = False
+    # dut.write_vcd_enabled = True
+    dut.write_test_vcds_to_dir = '/tmp'
+    
     runner.test(dut)
 
 
