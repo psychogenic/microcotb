@@ -20,6 +20,7 @@ from examples.simple_usb_bridge.dut_sub import DUT, DefaultPort
 
 cocotb.set_runner_scope(__name__)
 
+OnlyFatTrace = True
 
 async def reset_and_enable(dut, reset_hold_time:int=50):
     
@@ -49,7 +50,7 @@ async def ack_register_rcvd(dut):
     dut.register_processed.value = 0
     await ClockCycles(dut.clk, 1)
 
-@cocotb.test()
+@cocotb.test(skip=OnlyFatTrace)
 @cocotb.parametrize(
     ('mon_full', [False, True])
 )
@@ -79,7 +80,7 @@ async def test_monitorcontrol(dut:DUT, mon_full:bool):
     
 
 
-@cocotb.test(timeout_time=40, timeout_unit='ms')
+@cocotb.test(skip=OnlyFatTrace, timeout_time=40, timeout_unit='ms')
 async def test_firstvalid_time(dut):
     clock = Clock(dut.clk, 10, units="us")
     cocotb.start_soon(clock.start())
@@ -112,7 +113,7 @@ def dump_reg_setting(dut):
 @cocotb.test(timeout_time=300, timeout_unit='ms')
 async def test_parse(dut:DUT):
     samples_in_reg_set = [16, 4, 3, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1]
-    num_samples = 11 # number of registers to fetch
+    num_samples = 13 # number of registers to fetch
     reg_set = 0
     clock = Clock(dut.clk, 10, units="us")
     cocotb.start_soon(clock.start())
@@ -130,6 +131,7 @@ async def test_parse(dut:DUT):
     dut._log.info(f"Got it, elapse sim time is {SystemTime.current()}, clocking in {num_samples} registers")
     
     
+    num_regs = 0
     while reg_set < num_samples:
         
         if dut.fresh_sample.value == 1:
