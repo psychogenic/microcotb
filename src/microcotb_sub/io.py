@@ -22,7 +22,7 @@ handle all the details behind the scenes, in here.
 '''
 
 from microcotb.ports.io import IO
-from examples.simple_usb_bridge.signal import Signal
+from microcotb_sub.signal import Signal
 
 
 class SUBIO(IO):

@@ -16,9 +16,9 @@ import serial
 DefaultPort = '/dev/ttyACM0'
 
 import microcotb.log as logging
-from examples.simple_usb_bridge.signal import SUBSignal, SerialStream
-from examples.simple_usb_bridge.dut import DUT as BaseDUT
-from examples.simple_usb_bridge.dut import StateChangeReport, SUBIO
+from microcotb_sub.signal import SUBSignal, SerialStream
+from microcotb_sub.dut import DUT as BaseDUT
+from microcotb_sub.dut import StateChangeReport, SUBIO
 
 
             

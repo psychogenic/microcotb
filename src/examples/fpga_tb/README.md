@@ -1,6 +1,6 @@
 ## fpga_tb
 
-You can load the verilog for a cocotb testbench onto an FPGA, wrap that in a [SUB](../simple_usb_bridge) layer that allows inspecting and setting signals from the desktop over USB and run the cocotb testbench against that.
+You can load the verilog for a cocotb testbench onto an FPGA, wrap that in a [SUB](https://github.com/psychogenic/microcotb/tree/main/src/microcotb_sub) layer that allows inspecting and setting signals from the desktop over USB and run the cocotb testbench against that.
 
 So you have:
 

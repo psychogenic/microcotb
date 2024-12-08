@@ -10,7 +10,7 @@ specifics about how we're running
 import microcotb as cocotb
 cocotb.set_runner_scope(__name__)
 
-from examples.simple_usb_bridge.dut_sub import DUT, DefaultPort
+from microcotb_sub.dut_sub import DUT, DefaultPort
 import microcotb.log as logging
 from microcotb.time.value import TimeValue
 

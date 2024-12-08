@@ -25,7 +25,7 @@ Read and writes to a dut signal's `.value` and transparently transported over se
 ### example REPL interaction
 
 ```
->>> from examples.simple_usb_bridge.dut import *
+>>> from microcotb_sub.dut import *
 >>> dut = DUT('/dev/ttyACM0', name='myDUT',  auto_discover=True)
 >>> dut.host.value
 <LogicArray('00000000', Range(7, 'downto', 0))>
@@ -148,16 +148,16 @@ INFO:SUB:enabled neptune project, will test with Runner with 3 test cases:
         <TestCase note_e_highfar>
         <TestCase note_g_highclose>
         <TestCase note_a_exact>
-INFO:examples.simple_usb_bridge.dut:SUB DUT performing discovery
-INFO:examples.simple_usb_bridge.dut:Have signal clk at 0
-INFO:examples.simple_usb_bridge.dut:Have signal rst_n at 1
-INFO:examples.simple_usb_bridge.dut:Have signal ena at 2
-INFO:examples.simple_usb_bridge.dut:Have signal input_pulse at 3
-INFO:examples.simple_usb_bridge.dut:Have signal display_single_enable at 4
-INFO:examples.simple_usb_bridge.dut:Have signal display_single_select at 5
-INFO:examples.simple_usb_bridge.dut:Have signal prox_select at 6
-INFO:examples.simple_usb_bridge.dut:Have signal clk_config at 32
-INFO:examples.simple_usb_bridge.dut:Have signal segments at 33
+INFO:microcotb_sub.dut:SUB DUT performing discovery
+INFO:microcotb_sub.dut:Have signal clk at 0
+INFO:microcotb_sub.dut:Have signal rst_n at 1
+INFO:microcotb_sub.dut:Have signal ena at 2
+INFO:microcotb_sub.dut:Have signal input_pulse at 3
+INFO:microcotb_sub.dut:Have signal display_single_enable at 4
+INFO:microcotb_sub.dut:Have signal display_single_select at 5
+INFO:microcotb_sub.dut:Have signal prox_select at 6
+INFO:microcotb_sub.dut:Have signal clk_config at 32
+INFO:microcotb_sub.dut:Have signal segments at 33
 INFO:SUB:*** Running Test 1/3: note_e_highfar ***
 INFO:SUB:E @ 330 delta 12
 INFO:SUB:little E high/far

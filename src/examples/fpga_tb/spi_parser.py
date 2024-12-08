@@ -15,7 +15,7 @@ from microcotb.triggers.edge import RisingEdge
 
 from microcotb.utils import get_sim_time
 
-from examples.simple_usb_bridge.dut_sub import DUT, DefaultPort
+from microcotb_sub.dut_sub import DUT, DefaultPort
 
 
 cocotb.set_runner_scope(__name__)

@@ -8,7 +8,7 @@ Created on Nov 29, 2024
 from microcotb.ports.io import IO
 
 # get the Simple USB Bridge DUT
-import examples.simple_usb_bridge.dut_sub as dut_sub
+import microcotb_sub.dut_sub as dut_sub
 
 import microcotb.log as logging
 

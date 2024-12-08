@@ -18,7 +18,7 @@ from microcotb.ports.io import IO
 import microcotb.log as logging
 import microcotb.dut 
 from microcotb.monitorable.dut import MonitorableDUT, StateChangeReport
-from examples.simple_usb_bridge.signal import Signal
+from microcotb_sub.signal import Signal
 
 log = logging.getLogger(__name__)
 

@@ -112,7 +112,7 @@ async def test_finishoff(dut):
 
 
 import logging
-from examples.simple_usb_bridge.dut_sub import DUT
+from microcotb_sub.dut_sub import DUT
 def main():
     logging.basicConfig(level=logging.INFO)
     runner = cocotb.get_runner(__name__)
