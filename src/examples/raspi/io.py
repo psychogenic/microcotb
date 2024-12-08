@@ -10,9 +10,13 @@ from gpiod.line import Direction, Value, Edge
 import datetime 
 import time
 
+import microcotb.log as logging 
 
-DebounceUSecs = 500
-ResilientReads = False
+DebounceUSecs = 300
+ResilientReads = 4
+
+log = logging.getLogger(__name__)
+
 
 class ConfigurableDirectionIO(IO):
     
@@ -41,6 +45,7 @@ class RPiOE(IO):
         
 
 class RPiIO(MonitorableIO):
+    DefaultEventWaitTimeDelta = datetime.timedelta(microseconds=DebounceUSecs+1)
     def __init__(self, name:str, pin_list:list, chipname:str="/dev/gpiochip0"):
         width = len(pin_list)
         super().__init__(name, width, self._get_line_values, self._set_line_values)
@@ -55,12 +60,14 @@ class RPiIO(MonitorableIO):
         self._line_request = gpiod.request_lines(self._chipname, consumer='microcotb', 
                                                  config=self._config)
         
+        
+        
     
     @property
     def has_inputs(self):
         return self.oe.current_value() < self.oe.max_value
     
-    def has_events(self, timeout=0.0001):
+    def has_events(self, timeout=DefaultEventWaitTimeDelta):
         if self._line_request.wait_edge_events(timeout):
             num = len(self._line_request.read_edge_events())
             # print(f'NUM EVENTS! {num}')
@@ -82,12 +89,15 @@ class RPiIO(MonitorableIO):
                             debounce_period=datetime.timedelta(microseconds=DebounceUSecs))
     def _get_line_resilient(self):
         attempt = 0
-        vo = [1, 2]
-        while vo[0] != vo[1]:
+        vo = list(range(ResilientReads))
+        while vo.count(vo[0]) != len(vo):
             if attempt:
-                print(f'ATTEMPT {attempt} on {self.name}: {vo}')
+                if attempt > 1:
+                    log.warning(f'resilient get_line failed {attempt} times (last {vo})')
+                else:
+                    log.debug(f'resilient get_line failed {attempt} times (last {vo})')
             attempt += 1
-            for a in range(2):
+            for a in range(ResilientReads):
                 
                 v = 0
                 cur_vals = self.line_request.get_values()
@@ -96,7 +106,7 @@ class RPiIO(MonitorableIO):
                         v |= (1 << i)
                 vo[a] = v
                 
-                time.sleep(1.1*DebounceUSecs/1e6)
+                time.sleep(DebounceUSecs/(2*1e6))
                 
         return vo[0]
         

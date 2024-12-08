@@ -14,7 +14,7 @@ from microcotb.clock import Clock
 from microcotb.triggers import Timer, ClockCycles # RisingEdge, FallingEdge, Timer, ClockCycles
 import microcotb as cocotb
 OnlyLast = True
-DefaultToggleTime = 0.6
+DefaultToggleTime = 0.61
 displayNotes = {
             'NA':     0b00000010, # -
             'A':      0b11101110, # A

@@ -73,12 +73,9 @@ class DUT(MonitorableDUT):
         if not self.is_monitoring:
             return 
         self._report_and_cache(io, value_written)
-        
-        time.sleep(0.001)
         for iowithinput in self._port_with_inputs:
             # print(f'check {iowithinput.name}')
-            tm = 0.01 if iowithinput.name == 'uo_out' else 0.0002
-            if io != iowithinput and iowithinput.has_events(tm):
+            if io != iowithinput and iowithinput.has_events():
                 v = iowithinput.value
                 # print(f'{iowithinput.name} EVENTS {bin(v)}')
                 self._report_and_cache(iowithinput, v) # force a read
