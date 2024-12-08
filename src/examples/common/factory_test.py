@@ -9,6 +9,7 @@ from microcotb.clock import Clock
 from microcotb.triggers import RisingEdge, FallingEdge, ClockCycles, Timer
 from microcotb.utils import get_sim_time
 
+SkipFails = True
 
 @cocotb.test()
 async def test_loopback(dut):
@@ -67,7 +68,7 @@ async def test_counter(dut):
     dut._log.info("test_counter passed")
     
 
-@cocotb.test(expect_fail=True)
+@cocotb.test(expect_fail=True, skip=SkipFails)
 async def test_should_fail(dut):
     
     dut._log.info("Will fail with msg")
@@ -79,7 +80,7 @@ async def test_will_skip(dut):
     dut._log.info("This should not be output!")
 
 
-@cocotb.test(timeout_time=100, timeout_unit='us', expect_fail=True)
+@cocotb.test(timeout_time=100, timeout_unit='us', expect_fail=True, skip=SkipFails)
 @cocotb.parametrize(
     ("clk_period", [10,125]), 
     ("timer_t", [101,200])
