@@ -33,7 +33,7 @@ def test(func=None, *,
         else:
             test_name = name
             
-        if isinstance(func, Parameterized):
+        if isinstance(func, Parameterized) and not skip:
             for tf in func.generate_tests(
                                 name=test_name,
                                 timeout_time=timeout_time,

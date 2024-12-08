@@ -84,12 +84,13 @@ class Runner:
                 log.warning(f"*** Running Test {test_count+1}/{num_tests}: {nm} ***") 
                 t_start_s = time.runtime_start()
                 dut.testing_unit_start(test)
-                test.run(dut)
-                if test.expect_fail: 
-                    num_failures += 1
-                    log.error(f"*** {nm} expected fail, so PASS ***")
-                else:
-                    log.warning(f"*** Test '{nm}' PASS ***")
+                if not test.skip:
+                    test.run(dut)
+                    if test.expect_fail: 
+                        num_failures += 1
+                        log.error(f"*** {nm} expected fail, but PASSed***")
+                    else:
+                        log.warning(f"*** Test '{nm}' PASS ***")
             except KeyboardInterrupt:
                 test.failed = True 
                 test.failed_msg = f'Keyboard interrupt @ {SystemTime.current()}'
