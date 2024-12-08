@@ -5,7 +5,7 @@ Created on Dec 7, 2024
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
 
-from .dut import DUT, Direction
+from microcotb_rpi.dut import DUT, Direction
 
 class TinyTapeoutDUT(DUT):
     '''

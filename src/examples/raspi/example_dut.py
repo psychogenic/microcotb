@@ -4,7 +4,7 @@ Created on Dec 7, 2024
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
-from .dut import DUT, Direction
+from microcotb_rpi.dut import DUT, Direction
 
 class Pi5DUT(DUT):
     def __init__(self):
