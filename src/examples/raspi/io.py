@@ -7,6 +7,12 @@ Created on Dec 7, 2024
 from microcotb.monitorable.io import IO, MonitorableIO
 import gpiod
 from gpiod.line import Direction, Value, Edge
+import datetime 
+import time
+
+
+DebounceUSecs = 500
+ResilientReads = False
 
 class ConfigurableDirectionIO(IO):
     
@@ -15,7 +21,7 @@ class ConfigurableDirectionIO(IO):
 
 class RPiOE(IO):
     def __init__(self, name:str, width:int, managed_io:ConfigurableDirectionIO):
-        super().__init__(f'oe_{name}', width, self.current_value, self.set_current_value)
+        super().__init__(f'{name}_oe', width, self.current_value, self.set_current_value)
         self._managed_name = name
         self._current_value = 0
         self._managed_io = managed_io
@@ -49,7 +55,18 @@ class RPiIO(MonitorableIO):
         self._line_request = gpiod.request_lines(self._chipname, consumer='microcotb', 
                                                  config=self._config)
         
-        
+    
+    @property
+    def has_inputs(self):
+        return self.oe.current_value() < self.oe.max_value
+    
+    def has_events(self, timeout=0.0001):
+        if self._line_request.wait_edge_events(timeout):
+            num = len(self._line_request.read_edge_events())
+            # print(f'NUM EVENTS! {num}')
+            return num 
+        return None
+    
     @property 
     def line_request(self) -> gpiod.LineRequest:
         return self._line_request
@@ -61,16 +78,37 @@ class RPiIO(MonitorableIO):
                         )
         
         return gpiod.LineSettings(
-                            direction=Direction.INPUT, edge_detection=Edge.NONE # FIXME
-                        )
+                            direction=Direction.INPUT, edge_detection=Edge.BOTH,
+                            debounce_period=datetime.timedelta(microseconds=DebounceUSecs))
+    def _get_line_resilient(self):
+        attempt = 0
+        vo = [1, 2]
+        while vo[0] != vo[1]:
+            if attempt:
+                print(f'ATTEMPT {attempt} on {self.name}: {vo}')
+            attempt += 1
+            for a in range(2):
+                
+                v = 0
+                cur_vals = self.line_request.get_values()
+                for i in range(len(cur_vals)):
+                    if cur_vals[i].value:
+                        v |= (1 << i)
+                vo[a] = v
+                
+                time.sleep(1.1*DebounceUSecs/1e6)
+                
+        return vo[0]
         
     def _get_line_values(self):
+        # time.sleep(DebounceUSecs/1e6)
+        if ResilientReads:
+            return self._get_line_resilient()
         v = 0
         cur_vals = self.line_request.get_values()
         for i in range(len(cur_vals)):
             if cur_vals[i].value:
                 v |= (1 << i)
-        
         return v
     
     def _set_line_values(self, set_to:int):
@@ -78,7 +116,7 @@ class RPiIO(MonitorableIO):
         oe_value = self.oe.value
         set_val_conf = dict()
         for i in range(len(oe_value)):    
-            if oe_value[i]:
+            if oe_value[i] == True:
                 set_val_conf[self._pin_ids[i]] =  Value.ACTIVE if (set_to & (1 << i)) else Value.INACTIVE
         
         if len(set_val_conf):
@@ -101,5 +139,6 @@ class RPiIO(MonitorableIO):
                 new_config[self._pin_ids[i]] = self._config[self._pin_ids[i]]
         
         self.line_request.reconfigure_lines(new_config)
+        
                 
                 

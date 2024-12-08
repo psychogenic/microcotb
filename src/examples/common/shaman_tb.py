@@ -571,10 +571,9 @@ async def processMessageBlocks(dut, encodedMsg, message_blocks, quietLogging=Tru
     if not quietLogging:
         dut._log.info('SHA256 RESULT:')
     dut._log.info(f'rcvd digest: {calculated}')
-    if not quietLogging:
-        dut._log.info(f'hashlib/ext: {hashval}')
+    dut._log.info(f'hashlib/ext: {hashval}')
     
-    assert hashval == calculated, f"For message: '{encodedMsg}'\ncalc {calculated} should == {hashval}"
+    assert hashval == calculated, f"Hash mismatch!"
     
     
     return  tickWaitCountTotal

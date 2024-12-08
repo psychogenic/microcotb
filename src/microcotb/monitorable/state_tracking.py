@@ -21,6 +21,8 @@ class StateChangeReport:
         return list(self._changed_ports.keys())     
     def all_changes(self):
         return list(self._changed_ports.items())
+    def get(self, name:str):
+        return self._changed_ports[name]
     def __len__(self):
         return len(self._changed_ports)
     def __repr__(self):

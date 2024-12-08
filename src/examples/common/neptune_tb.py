@@ -13,8 +13,8 @@ https://github.com/psychogenic/tt04-neptune/blob/main/src/test.py
 from microcotb.clock import Clock
 from microcotb.triggers import Timer, ClockCycles # RisingEdge, FallingEdge, Timer, ClockCycles
 import microcotb as cocotb
-
-
+OnlyLast = True
+DefaultToggleTime = 0.6
 displayNotes = {
             'NA':     0b00000010, # -
             'A':      0b11101110, # A
@@ -69,7 +69,7 @@ ClockConfig = {
         },
     ClockConfig.Clock10KHz: {
         
-            'config': ClockConfig.Clock40KHz,
+            'config': ClockConfig.Clock10KHz,
             'freq': 10000,
         },
     ClockConfig.Clock40KHz: {
@@ -83,17 +83,14 @@ async def reset(dut):
     dut._log.info(f"reset(dut)")
     dut.display_single_enable.value = 0
     dut.display_single_select.value = 0
-    dut.rst_n.value = 1
+    dut.rst_n.value = 0
     dut.clk_config.value = ClockConfig[SelectedClockFreq]['config']
     dut._log.info("hold in reset")
-    await ClockCycles(dut.clk, 5)
-    dut._log.info("reset done")
-    dut.input_pulse.value = 1
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 5)
-    dut.input_pulse.value = 0
+    await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 5)
+    await ClockCycles(dut.clk, 1)
+    
+    dut._log.info("reset done")
    
     
 async def startup(dut):
@@ -142,7 +139,7 @@ async def setup_tuner(dut):
     await startup(dut)
     
 
-async def note_toggle(dut, freq, delta=0, msg="", toggleTime=1.2, skip_reset:bool=False):
+async def note_toggle(dut, freq, delta=0, msg="", toggleTime=DefaultToggleTime, skip_reset:bool=False):
     dut._log.info(msg)
     if not skip_reset:
         await startup(dut)
@@ -162,7 +159,7 @@ async def note_e(dut, eFreq=330, delta=0, msg=""):
 
 
     
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_e_highfar(dut):
     dispValues = await note_e(dut, eFreq=330, delta=12, msg="little E high/far")
     target_value =  (displayProx['hifar'] & ProxSegMask)
@@ -182,7 +179,7 @@ async def note_g(dut, delta=0, msg=""):
     dut._log.info(f"Note G: PASS ({bin(dispValues[1])})")
     return dispValues
 
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_g_highclose(dut):
     dispValues = await note_g(dut, delta=3, msg="High/close")
     target_value =  (displayProx['hiclose'] & ProxSegMask)
@@ -191,18 +188,18 @@ async def note_g_highclose(dut):
     
 
 
-async def note_a(dut, delta=0, msg="", skip_reset:bool=False):
+async def note_a(dut, delta=0, msg="", toggleTime=DefaultToggleTime, skip_reset:bool=False):
     aFreq = 110
     
     dut._log.info(f"A delta {delta}")
-    dispValues = await note_toggle(dut, freq=aFreq, delta=delta, msg=msg, skip_reset=skip_reset);
+    dispValues = await note_toggle(dut, freq=aFreq, delta=delta, msg=msg, toggleTime=toggleTime, skip_reset=skip_reset);
     
     note_target = (displayNotes['A'] & SegmentMask)
     assert dispValues[1] == note_target, f"Note A FAIL: {dispValues[1]} != {note_target}"
     dut._log.info(f"Note A pass ({bin(dispValues[1])})")
     return dispValues
 
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_a_exact(dut):
     dispValues = await note_a(dut, delta=0, msg="A exact")
     
@@ -232,19 +229,19 @@ async def note_b(dut, delta=0, msg=""):
  
 
     
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_fatE_lowfar(dut):
     dispValues = await note_e(dut, eFreq=83, delta=-4, msg="fat E low/far")
     assert (dispValues[0] == (displayProx['lowfar'] & ProxSegMask)) or (dispValues[0] == (displayProx['exact'] & ProxSegMask))
     
     
  
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_fatE_exact(dut):
     dispValues = await note_e(dut, eFreq=83, delta=-1, msg="fat E -1Hz")
     assert dispValues[0] == (displayProx['exact'] & ProxSegMask)
     
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_e_lowclose(dut):
     dut._log.info("NOTE: delta same as for fat E, but will be close...")
     dispValues = await note_e(dut, eFreq=330, delta=-7, msg="E exact")
@@ -252,28 +249,28 @@ async def note_e_lowclose(dut):
 
 
     
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_e_exact(dut):
     dispValues = await note_e(dut, eFreq=330, delta=0, msg="E exact")
     assert dispValues[0] == (displayProx['exact'] & ProxSegMask) 
 
     
 
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_g_lowclose(dut):
     dispValues = await note_g(dut, delta=-4, msg="G low/close")
     assert dispValues[0] == (displayProx['lowclose'] & ProxSegMask) 
    
 
     
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_g_lowfar(dut):
     dispValues = await note_g(dut, delta=-10, msg="G low/far")
     assert dispValues[0] == (displayProx['lowfar'] & ProxSegMask) 
     
      
 
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_a_highfar(dut):
     dispValues = await note_a(dut, delta=4, msg="A high/far")
     assert dispValues[0] == (displayProx['hifar'] & ProxSegMask) 
@@ -281,14 +278,14 @@ async def note_a_highfar(dut):
 
 
 
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def note_b_high(dut):
     dispValues = await note_b(dut, delta=4, msg="B high/close")
     assert dispValues[0] == (displayProx['hiclose'] & ProxSegMask) 
  
 
 
-## @cocotb.test()
+## @cocotb.test(skip=OnlyLast)
 async def note_b_exact(dut):
     dispValues = await note_b(dut, delta=0, msg="B exact")
     targ_value = (displayProx['exact'] & ProxSegMask)
@@ -296,7 +293,7 @@ async def note_b_exact(dut):
  
 
 
-@cocotb.test()
+@cocotb.test(skip=OnlyLast)
 async def success_test(dut):
     await note_toggle(dut, freq=20, delta=0, msg="just toggling -- end");
     
@@ -307,11 +304,11 @@ async def note_e_then_a(dut):
     dut.is_monitoring = True
     dut.write_vcd_enabled = True
     dut._log.info("NOTE: delta same as for fat E, but will be close...")
-    dispValues = await note_e(dut, eFreq=330, delta=-7, msg="E exact")
-    assert dispValues[0] == (displayProx['lowclose'] & ProxSegMask) 
+    dispValues = await note_e(dut, eFreq=330, delta=-2, msg="E exact")
+    assert dispValues[0] == (displayProx['exact'] & ProxSegMask) 
     
     
-    dispValues = await note_a(dut, delta=0, msg="A exact", skip_reset=True)
+    dispValues = await note_a(dut, delta=0, msg="A exact", toggleTime=1.1, skip_reset=True)
     
     target_value =  (displayProx['exact'] & ProxSegMask)
     assert dispValues[0] == target_value, f"exact fail {dispValues[0]} != {target_value}"

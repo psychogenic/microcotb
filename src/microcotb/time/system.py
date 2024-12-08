@@ -6,12 +6,14 @@ Created on Nov 23, 2024
 '''
 from microcotb.time.value import TimeValue, TimeConverter
 from microcotb.clock import Clock
+import time
 
 class SystemTimeout(Exception):
     pass
 
 class SystemTime:
     ResetTime = None
+    ForceSleepOnAdvance = None
     _global_time = TimeValue(0, TimeValue.BaseUnits)
     _min_sleep_time = TimeValue(
                         TimeConverter.rescale(200, 'us', TimeValue.BaseUnits), 
@@ -61,4 +63,6 @@ class SystemTime:
         
         for clk in Clock.all():
             clk.time_is_now(cls._global_time)
+            if cls.ForceSleepOnAdvance:
+                time.sleep(cls.ForceSleepOnAdvance)
             

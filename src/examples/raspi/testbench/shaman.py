@@ -18,16 +18,12 @@ import examples.raspi.tt_dut as rpidut
 
 class ShamanDUT(rpidut.TinyTapeoutDUT):
     '''
-        Rather than setup neptune-specific signal mappings on the FPGA,
-        doing it here allows a single I/O-through SUB FPGA to work with 
-        *any* tiny tapeout project.
-        
         So the base class DUT will expose ui_in, uo_out etc for all projects,
         and here we create named attributes using bits and slices from those
         standard signals, that are used in the testbench.
     '''
-    def __init__(self, serial_port:str):
-        super().__init__(serial_port, 'SHAMAN', auto_discover=True)
+    def __init__(self):
+        super().__init__('SHAMAN')
 
         self.databyteIn = self.ui_in
         self.resultbyteOut = self.uo_out
@@ -48,15 +44,16 @@ class ShamanDUT(rpidut.TinyTapeoutDUT):
 
 
 import logging
-def main(ser_port:str='/dev/ttyACM0'):
+def main():
     from microcotb.time.value import TimeValue
     TimeValue.ReBaseStringUnits = True # want pretty strings
 
     logging.basicConfig(level=logging.INFO)
     
-    dut = ShamanDUT(ser_port)
+    dut = ShamanDUT()
     dut.is_monitoring = True
-    dut.sync_change_dumps =  True
+    dut.write_test_vcds_to_dir = '/tmp'
+    dut.write_vcd_enabled = True
     
     dut.uio_oe.value = dut.oe_bidir_setting
     

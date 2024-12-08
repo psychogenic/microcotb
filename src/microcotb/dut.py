@@ -10,12 +10,16 @@ from microcotb.ports.io import IO
 import microcotb.log as logging
 from microcotb.testcase import TestCase
 from microcotb.platform import PinWrapper
+from microcotb.types.logic_array import LogicArray
 
 class NoopSignal:
     def __init__(self, name:str, def_value:int=0):
         self._name = name
         self._value = def_value
         
+    @property 
+    def name(self):
+        return self._name 
     @property 
     def value(self):
         return self._value 
@@ -25,11 +29,11 @@ class NoopSignal:
         self._value = set_to
         
     def __repr__(self):
-        return f'<Noop {self._name}>'
+        return f'<Noop {self.name}>'
         
 class Wire(NoopSignal):
     def __repr__(self):
-        return f'<Wire {self._name}>'
+        return f'<Wire {self.name}>'
 
 
 class SliceWrapper:
@@ -40,6 +44,14 @@ class SliceWrapper:
         self.slice_start = idx_or_start
         self.slice_end = slice_end
         
+    def out_of_array(self, la:LogicArray) -> LogicArray:
+        if self.slice_end is not None:
+            v = la[self.slice_start:self.slice_end]
+        else:
+            v = la[self.slice_start]
+        return v
+    
+    
     @property 
     def value(self):
         if self.slice_end is not None:
@@ -54,7 +66,25 @@ class SliceWrapper:
         else:
             self._io[self.slice_start] = set_to
             
+    @property 
+    def is_readable(self):
+        return self._io.is_readable
+    
+    @property 
+    def is_writeable(self):
+        return self._io.is_writeable
+    
+    @property 
+    def name(self):
+        return self._name
+    
+    @property 
+    def width(self):
+        if self.slice_end is not None:
+            return (self.slice_start - self.slice_end) + 1
         
+        return 1 
+    
     def __int__(self):
         return int(self.value)
         
@@ -62,8 +92,8 @@ class SliceWrapper:
     def __repr__(self):
         nm = self._io.port.name 
         if self.slice_end is not None:
-            return f'<Slice {self._name} {nm}[{self.slice_start}:{self.slice_end}] ({hex(self)})>'
-        return f'<Slice {self._name} {nm}[{self.slice_start}] ({hex(self)})>'
+            return f'<Slice {self._name} {nm}[{self.slice_start}:{self.slice_end}] ({hex(self.value)})>'
+        return f'<Slice {self._name} {nm}[{self.slice_start}] ({hex(self.value)})>'
         
     def __str__(self):
         if self.slice_end is not None:
@@ -87,10 +117,12 @@ class IOInterface:
     def add_slice_attribute(self, name:str, source:IO, idx_or_start:int, slice_end:int=None):
         slc = self.new_slice_attribute(name, source, idx_or_start, slice_end)
         setattr(self, name, slc)
+        return slc
         
     def add_bit_attribute(self, name:str, source:IO, bit_idx:int):
         bt = self.new_bit_attribute(name, source, bit_idx)
         setattr(self, name, bt)
+        return bt
         
     def add_port(self, name:str, width:int, reader_function=None, writer_function=None):
         setattr(self, name, IO(name, width, reader_function, writer_function))

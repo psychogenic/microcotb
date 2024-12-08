@@ -6,6 +6,7 @@ Created on Nov 21, 2024
 '''
 from microcotb.types.ioport import IOPort
 from microcotb.types.handle import LogicObject
+from microcotb.types.logic_array import LogicArray
 
 
 class IO(LogicObject):
@@ -25,14 +26,32 @@ class IO(LogicObject):
             self._hashval = hash(f'{self.port.name}-{self._ioidx}')
         return self._hashval
         
-
     @property 
-    def is_readable(self):
+    def last_value(self) -> int:
+        return self.port.last_value
+    
+    @property
+    def last_value_as_array(self) -> LogicArray:
+        return LogicArray._from_handle(self.port.last_value_bin_str)
+    
+    def value_as_array(self, v:int) -> LogicArray:
+        return LogicArray._from_handle(self.port.last_value_bin_str)
+    
+    @property 
+    def is_readable(self) -> bool:
         return self.port.is_readable 
     
     @property 
-    def is_writeable(self):
+    def is_writeable(self) -> bool:
         return self.port.is_readable
+    
+    @property 
+    def width(self) -> int:
+        return self.port.width
+    
+    @property 
+    def max_value(self) -> int:
+        return (2**self.port.width)-1
     
     @property 
     def signal_read(self):
@@ -47,10 +66,14 @@ class IO(LogicObject):
     def signal_write(self, func):
         self.port.signal_write = func
         
+    @property 
+    def name(self) -> str:
+        return self.port.name
+        
     
     def __repr__(self):
         val = hex(int(self.value)) if self.port.is_readable  else ''
-        return f'<IO {self.port.name} {val}>'
+        return f'<IO {self.name} {val}>'
     
     def __int__(self):
         if self.port.is_readable:

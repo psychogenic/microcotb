@@ -16,8 +16,8 @@ class TinyTapeoutDUT(DUT):
         so ui_in -- is input to the ASIC, so we will be writing to it, etc.
     
     '''
-    def __init__(self):
-        super().__init__('TTDUT')   
+    def __init__(self, name:str='TTDUT'):
+        super().__init__(name)   
         # call add_rpio with name, direction (in,out or config) and 
         # list of pins
         #  this list looks like verilog order

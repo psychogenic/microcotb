@@ -7,6 +7,7 @@ Created on Nov 20, 2024
 
 from microcotb.types.range import Range
 import microcotb.log as logging
+from microcotb.types.logic_array import LogicArray
 log = logging.getLogger(__name__)
 
 RangeDirection = Range.RANGE_DOWN
@@ -28,6 +29,25 @@ class Port:
         self.width = width
         self.signal_read = read_signal_fn 
         self.signal_write = write_signal_fn
+        self._last_value = 0
+        self._fstr = '{v:0' + str(self.width) + 'b}'
+    
+    @property 
+    def last_value(self) -> int:
+        return self._last_value
+    
+    
+    @property 
+    def last_value_bin_str(self):
+        return self._fstr.format(v=self._last_value)
+    
+    def value_as_bin_str(self, v:int):
+        s = self._fstr.format(v=v)
+        # print(f'FMT {self._fstr} and {v} and {s}')
+        return s
+    
+    def value_as_array(self, v:int) -> LogicArray:
+        return LogicArray._from_handle(self.value_as_bin_str(v))
     
     @property 
     def is_readable(self):
@@ -41,20 +61,21 @@ class Port:
         if self.signal_write is None:
             log.error(f'writes not supported on {self.name}')
             return
-        self.signal_write(vint)
+        self.do_write(vint)
         
     def set_signal_val_binstr(self, vstr:str):
         if self.signal_write is None:
             log.error(f'writes not supported on {self.name}')
             return 
-        self.signal_write(int(vstr, 2))
+        vint = int(vstr, 2)
+        self.do_write(vint)
         
         
     def get_signal_val_binstr(self):
         if self.signal_read is None:
             log.error(f'reads not supported on {self.name}')
             return
-        val = self.signal_read()
+        val = self.do_read()
         fstr = '{v:0' + str(self.width) + 'b}'
         return fstr.format(v=val)
     
@@ -83,6 +104,14 @@ class Port:
         return self.signal_read() == other.signal_read()
     
     
+    def do_read(self):
+        self._last_value = self.signal_read()
+        # print(f"RCH {self._last_value}")
+        return self._last_value 
+    def do_write(self, v):
+        self._last_value = v
+        self.signal_write(v)
+        # print(f"WCH {self._last_value}")
 
 
 class IOPort(Port):

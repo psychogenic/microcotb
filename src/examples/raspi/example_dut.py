@@ -45,7 +45,7 @@ class Pi5DUT(DUT):
         # notice that it a binary of CS MO MI SCK in that order
         #                         0b  1  1  0  1
         # same as the list of pins
-        self.oe_myspi.value = 0b1101
+        self.myspi_oe.value = 0b1101
         # you could also do
         # self.oe_myspi.value[3] = 1 to set the CS bit as output
         

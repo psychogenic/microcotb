@@ -42,6 +42,7 @@ class MonitorableDUT(microcotb.dut.DUT):
         self._queued_state_changes = []
         self.events_of_interest_per_test = dict()
         self._last_state_cache = StateCache()
+        self._sub_fields = dict()
     
     
     # might wish to override (probably)
@@ -50,8 +51,9 @@ class MonitorableDUT(microcotb.dut.DUT):
         # log.warning("No vcd_initial_state_reports -- override if needed")
         stch = StateChangeReport()
         for io in self.available_io():
-            if io.is_readable:
-                stch.add_change(io.port.name, io.value)
+            pass
+            #FIXME if io.is_readable:
+            #    stch.add_change(io.name, io.value)
                 
         if len(stch):
             return [stch]
@@ -66,9 +68,15 @@ class MonitorableDUT(microcotb.dut.DUT):
     @is_monitoring.setter
     def is_monitoring(self, set_to:bool):
         self._is_monitoring = True if set_to else False
-        
-        if not self._is_monitoring:
+        self.changed_monitoring()
+            
+    def changed_monitoring(self):
+        if self._is_monitoring:
+            SystemTime.ResetTime = TimeValue(1, TimeValue.BaseUnits)
+        else:
+            SystemTime.ResetTime = None
             self.state_cache.clear()
+        
         
     @property 
     def state_cache(self) -> StateCache:
@@ -119,6 +127,18 @@ class MonitorableDUT(microcotb.dut.DUT):
         return self._queued_state_changes    
     
     def queue_state_change(self, atTime:TimeValue, report:StateChangeReport):
+        for name in report.changed():
+            if name in self._sub_fields:
+                #last_val = getattr(self, name).last_value_as_array
+                #print(last_val)
+                v = report.get(name)
+                io = getattr(self, name)
+                bin_str = io.port.value_as_array(v)
+                
+                for sf in self._sub_fields[name]:
+                    report.add_change(sf.name, int(sf.out_of_array(bin_str)))
+                    
+                #print(f'LV {name} {report.all_changes()}')
         self._queued_state_changes.append(tuple([atTime, report]))
         
     def append_state_change(self, stch:StateChangeReport):
@@ -148,6 +168,10 @@ class MonitorableDUT(microcotb.dut.DUT):
         if not self.write_test_vcds_to_dir:
             self._log.warning("Write VCD enabled, but NO vcds dir set?!")
             return 
+        if test.skip:
+            self._log.info("test skipped, no vcd write.")
+            self.flush_queued_state_changes()
+            return
         self.store_queued_events_as_group(test.name)
         fname = self.vcd_file_name(test)
         fpath = os.path.join(self.write_test_vcds_to_dir, f'{fname}.vcd')
@@ -162,8 +186,11 @@ class MonitorableDUT(microcotb.dut.DUT):
          
     def get_queued_state_changes(self):
         v = self._queued_state_changes
-        self._queued_state_changes = []
+        self.flush_queued_state_changes()
         return v
+    def flush_queued_state_changes(self):
+        self._queued_state_changes = []
+        
     
     def dump_queued_events_as_vcd(self, name:str, indir:str=None):
         if not indir:
@@ -215,8 +242,23 @@ class MonitorableDUT(microcotb.dut.DUT):
         
         for varname in Event.variables_with_events():
             my_field = getattr(self, varname)
-            vcd.add_variable(varname, my_field.port.width, self.VCDScope)
+            vcd.add_variable(varname, my_field.width, self.VCDScope)
             
         vcd.write_to(outputfile_path)
+        
     
+    def add_slice_attribute(self, name:str, source:MonitorableIO, idx_or_start:int, slice_end:int=None):
+        rv = super().add_slice_attribute(name, source, idx_or_start, slice_end)
+        if source.name not in self._sub_fields:
+            self._sub_fields[source.name] = []
+            
+        self._sub_fields[source.name].append(rv)
+        
+        
+    def add_bit_attribute(self, name:str, source:MonitorableIO, bit_idx:int):
+        rv = super().add_bit_attribute(name, source, bit_idx)
+        if source.name not in self._sub_fields:
+            self._sub_fields[source.name] = []
+        self._sub_fields[source.name].append(rv)
+        return rv
     

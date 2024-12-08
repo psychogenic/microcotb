@@ -12,6 +12,7 @@ import microcotb.utils.tm as time
 import microcotb.platform as plat
 import microcotb.log as logging
 _RunnerSingletonByName = None
+PropExceptions = False # just for debug
 
 
 class Runner:
@@ -103,6 +104,8 @@ class Runner:
                     else:
                         test.failed_msg = e.args[0]
                 num_failures += 1
+                if PropExceptions:
+                    raise e
                 
             test.real_time = time.runtime_delta_secs(t_start_s)
             shortest_interval = Clock.get_shortest_event_interval()
