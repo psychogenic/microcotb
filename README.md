@@ -139,6 +139,9 @@ Get it and use it from github, by cloning or from a release, or on the desktop y
 pip install microcotb
 ```
 
+This gives you the libraries but head to the repo for [the example tests and code](https://github.com/psychogenic/microcotb/tree/main/src/examples/)
+
+
 To get started you need three things:
 
   1) a set of @cocotb.test()
@@ -195,6 +198,21 @@ runner:         SKIP    test_will_skip                           --
 runner: Real run time: 6.0000s (122222.22 steps/s avg)
 
 ```
+### imports and setup
+
+
+The main delta here are the libraries included--different name, 'cause different project but doing something like
+
+```
+import microcotb as cocotb
+from microcotb.clock import Clock
+from microcotb.triggers import RisingEdge, FallingEdge, ClockCycles, Timer
+from microcotb.utils import get_sim_time
+
+@cocotb.test()
+async def test_loopback(dut):
+# ...
+```
 
   
 ### @cocotb.test
@@ -212,6 +230,9 @@ async def test_timeout(dut):
     await reset(dut)
     await RisingEdge(dut.is_ready)
 ```
+
+
+Should get you going without much further change to the tests, because all the class names just map.
 
 ### talking to hardware
 
