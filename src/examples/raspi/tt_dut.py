@@ -29,7 +29,7 @@ class TinyTapeoutDUT(DUT):
         # with ui_in[7] coming from pin 3 and input [0] coming from pin 27
         self.add_rpio('uio', Direction.CONFIGURABLE, [24, 9, 11, 1, 10, 25, 8, 7])
         
-        self.add_rpio('uo_out', Direction.INPUT, [0, 6, 13, 16, 5, 12, 19, 20])
+        self.add_rpio('uo_out', Direction.INPUT, [0, 6, 13, 26, 5, 12, 19, 20])
 
         # lets say we want a SPI port
         # we could do it individually 
