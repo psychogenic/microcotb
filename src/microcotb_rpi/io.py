@@ -108,7 +108,7 @@ class RPiIO(MonitorableIO):
         
     def _get_line_values(self):
         v = 0
-        for bitV in reversed(self.line_request.get_values()):
+        for bitV in reversed(self.line_request.get_values(self._pin_ids)):
             v = v * 2 + bitV.value # Supposedly faster than shifting
         return v
     
