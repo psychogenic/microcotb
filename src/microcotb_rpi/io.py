@@ -5,17 +5,26 @@ Created on Dec 7, 2024
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
 from microcotb.monitorable.io import IO, MonitorableIO
-import gpiod
-from gpiod.line import Direction, Value, Edge
+
+import microcotb.log as logging
+log = logging.getLogger(__name__)
+
+try:
+    import gpiod
+    from gpiod.line import Direction, Value, Edge
+    from gpiod.edge_event import EdgeEvent
+
+except ModuleNotFoundError as e:
+    log.critical("No 'gpiod' module on this platform--this isn't going to workout smashingly\n\n")
+    raise e
+    
 import datetime 
 import time
+ 
 
-import microcotb.log as logging 
-
-DebounceUSecs = 300
+DebounceUSecs = 0
 ResilientReads = 4
 
-log = logging.getLogger(__name__)
 
 
 class ConfigurableDirectionIO(IO):
@@ -45,6 +54,9 @@ class RPiOE(IO):
         
 
 class RPiIO(MonitorableIO):
+    
+    EdgeEvent = EdgeEvent
+    EventType = EdgeEvent.Type
     DefaultEventWaitTimeDelta = datetime.timedelta(microseconds=DebounceUSecs+1)
     def __init__(self, name:str, pin_list:list, chipname:str="/dev/gpiochip0"):
         width = len(pin_list)
@@ -54,8 +66,10 @@ class RPiIO(MonitorableIO):
         self._pin_ids = pin_list
         oe_value = self.oe.value
         self._config = dict()
+        self._lineoffset_to_bitpos = {}
         for i in range(width):
             self._config[self._pin_ids[i]] = self._get_line_settings_config(int(oe_value[i]))
+            self._lineoffset_to_bitpos[self._pin_ids[i]] = i
             
         self._line_request = gpiod.request_lines(self._chipname, consumer='microcotb', 
                                                  config=self._config)
@@ -65,13 +79,31 @@ class RPiIO(MonitorableIO):
     
     @property
     def has_inputs(self):
+        #if self.width < 2 and self.oe.value < 1:
+        #    return True 
         return self.oe.current_value() < self.oe.max_value
     
     def has_events(self, timeout=DefaultEventWaitTimeDelta):
         if self._line_request.wait_edge_events(timeout):
-            num = len(self._line_request.read_edge_events())
+            evts = self._line_request.read_edge_events()
+            return len(evts)
             # print(f'NUM EVENTS! {num}')
-            return num 
+            v = self.last_value
+            max_val = self.max_value
+            #print(f'Events!  last val {v}...', end='')
+            data = []
+            for ev in evts:
+                data.append((ev.global_seqno, ev.timestamp_ns, ev.event_type, bin(ev.line_seqno), self._lineoffset_to_bitpos[ev.line_offset]))
+                mask = (1 << self._lineoffset_to_bitpos[ev.line_offset])
+                if ev.event_type == EdgeEvent.Type.FALLING_EDGE:
+                    v &= (max_val & ~mask) # clear bit
+                elif ev.event_type == EdgeEvent.Type.RISING_EDGE:
+                    v |= mask # set bit
+            
+            #print(f'now set to {v}')
+            print('\n\t'.join(list(map(lambda x: str(x), data))))
+            self.port.do_force_update_last_value(v)
+            return evts
         return None
     
     @property 

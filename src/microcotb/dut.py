@@ -4,107 +4,21 @@ Created on Nov 21, 2024
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
-#from ttboard.demoboard import DemoBoard, Pins
-# from ttboard.ports.io import IO
 from microcotb.ports.io import IO
 import microcotb.log as logging
 from microcotb.testcase import TestCase
+
+from microcotb.sub_signals import SliceWrapper
+
+# import these here so users don't need to go 
+# hunting for them in the lib
 from microcotb.platform import PinWrapper
-from microcotb.types.logic_array import LogicArray
-
-class NoopSignal:
-    def __init__(self, name:str, def_value:int=0):
-        self._name = name
-        self._value = def_value
-        
-    @property 
-    def name(self):
-        return self._name 
-    @property 
-    def value(self):
-        return self._value 
-    
-    @value.setter 
-    def value(self, set_to):
-        self._value = set_to
-        
-    def __repr__(self):
-        return f'<Noop {self.name}>'
-        
-class Wire(NoopSignal):
-    def __repr__(self):
-        return f'<Wire {self.name}>'
-
-
-class SliceWrapper:
-    def __init__(self, name:str, io:IO, idx_or_start:int, slice_end:int=None):
-        self._io = io 
-        self._name = name
-        # can't create slice() on uPython...
-        self.slice_start = idx_or_start
-        self.slice_end = slice_end
-        
-    def out_of_array(self, la:LogicArray) -> LogicArray:
-        if self.slice_end is not None:
-            v = la[self.slice_start:self.slice_end]
-        else:
-            v = la[self.slice_start]
-        return v
-    
-    
-    @property 
-    def value(self):
-        if self.slice_end is not None:
-            return self._io[self.slice_start:self.slice_end]
-        
-        return self._io[self.slice_start]
-    
-    @value.setter 
-    def value(self, set_to:int):
-        if self.slice_end is not None:
-            self._io[self.slice_start:self.slice_end] = set_to
-        else:
-            self._io[self.slice_start] = set_to
-            
-    @property 
-    def is_readable(self):
-        return self._io.is_readable
-    
-    @property 
-    def is_writeable(self):
-        return self._io.is_writeable
-    
-    @property 
-    def name(self):
-        return self._name
-    
-    @property 
-    def width(self):
-        if self.slice_end is not None:
-            return (self.slice_start - self.slice_end) + 1
-        
-        return 1 
-    
-    def __int__(self):
-        return int(self.value)
-        
-            
-    def __repr__(self):
-        nm = self._io.port.name 
-        if self.slice_end is not None:
-            return f'<Slice {self._name} {nm}[{self.slice_start}:{self.slice_end}] ({hex(self.value)})>'
-        return f'<Slice {self._name} {nm}[{self.slice_start}] ({hex(self.value)})>'
-        
-    def __str__(self):
-        if self.slice_end is not None:
-            return str(self._io[self.slice_start:self.slice_end])
-        else:
-            return str(self._io[self.slice_start])
+from microcotb.sub_signals import NoopSignal, Wire
 
 
 class IOInterface:
     def __init__(self):
-        pass 
+        self._avail_io = [] 
     
     @classmethod
     def new_slice_attribute(cls, name:str, source:IO, idx_or_start:int, slice_end:int=None):
@@ -124,26 +38,51 @@ class IOInterface:
         setattr(self, name, bt)
         return bt
         
-    def add_port(self, name:str, width:int, reader_function=None, writer_function=None):
-        setattr(self, name, IO(name, width, reader_function, writer_function))
+    def add_port(self, name:str, width:int, reader_function=None, writer_function=None, initial_value=None):
+        io = IO(name, width, reader_function, writer_function)
+        setattr(self, name, io)
+        if initial_value is not None:
+            io.value = initial_value
     
-    def available_io(self):
+    def available_io(self, types_of_interest=None):
         # get anything that's IO or IO-based/derived
-        return list(filter(lambda x: isinstance(x, (IO, SliceWrapper)), 
-                           map(lambda a: getattr(self, a), 
-                               filter(lambda g: not g.startswith('_'), 
-                                      sorted(dir(self))))))
+        if self._avail_io is None:
+            # do a search
+            self._avail_io = \
+                list(filter(lambda x: isinstance(x, (IO, SliceWrapper)), 
+                               map(lambda a: getattr(self, a), 
+                                   filter(lambda g: not g.startswith('_'), 
+                                          sorted(dir(self))))))
+        if types_of_interest is None:
+            return self._avail_io
+        
+        return list(filter(lambda x: isinstance(x, types_of_interest), self._avail_io))
     
+    def available_ports(self):
+        '''
+            Available IO source ports, ie. IO objects, not 
+            slice/bit aliasing
+        '''
+        return self.available_io((IO,))
     
     def __setattr__(self, name:str, value):
-        if hasattr(self, name) and isinstance(getattr(self, name), (IO, SliceWrapper)):
+        if hasattr(self, name):
             port = getattr(self, name)
-            port.value = value 
-            return
+            if isinstance(port, (IO, SliceWrapper)):
+                port.value = value 
+                return
+        elif isinstance(value, (IO, SliceWrapper)):
+            # don't know this yet, and it's IO
+            if hasattr(self, '_avail_io'):
+                self._avail_io.append(value)
+        
         super().__setattr__(name, value)
-          
+
+
+
 class DUT(IOInterface):
     def __init__(self, name:str='DUT'):
+        super().__init__()
         self.name = name
         self._log = logging.getLogger(name)
         

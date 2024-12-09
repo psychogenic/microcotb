@@ -102,10 +102,14 @@ class Clock:
             raise ValueError
         return tv / self.half_period
     
-    def time_is_now(self, currentTime:TimeValue):
+    def time_is_now(self, currentTime:TimeValue) -> bool:
+        did_clock = False
         while self.next_toggle < currentTime:
             self.toggle()
             self.next_toggle += self.half_period
+            did_clock = True
+            
+        return did_clock
         
     def time_has_passed(self):
         #print(f"time passed to {SystemTime.current()} next is {self.next_toggle}")

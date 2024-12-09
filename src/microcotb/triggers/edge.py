@@ -8,6 +8,7 @@ from microcotb.triggers.awaitable import Awaitable
 from microcotb.clock import Clock
 from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
+
 class Edge(Awaitable):
     DebugTraceLoopCount = 2000
     def __init__(self, signal):
@@ -32,11 +33,15 @@ class Edge(Awaitable):
     def fastest_clock(self) -> Clock:
         if self._fastest_clock is None:
             self._fastest_clock = Clock.get_fastest()
+            if self._fastest_clock is None:
+                self.logger.waring("Waiting on an edge but no clocks specified")
             
         return self._fastest_clock
     
     @property 
     def time_increment(self) -> TimeValue:
+        if self.fastest_clock is None:
+            return None
         return self.fastest_clock.half_period
     
     def wait_for_conditions(self):
@@ -45,7 +50,9 @@ class Edge(Awaitable):
             if self.DebugTraceLoopCount is not None and \
                 self._cond_check_count % self.DebugTraceLoopCount == 0:
                 self.logger.debug(f"SystemTime {SystemTime.current()}")
-            SystemTime.advance(self.time_increment)
+            incr = self.time_increment
+            if incr is not None:
+                SystemTime.advance(incr)
             
             
         if self.DebugTraceLoopCount is not None:

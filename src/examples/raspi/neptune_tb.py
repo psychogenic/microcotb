@@ -56,7 +56,7 @@ from microcotb.time.value import TimeValue
 import microcotb.log as logging
 def main(dut:NeptuneDUT = None):
     TimeValue.ReBaseStringUnits = True
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     runner = cocotb.get_runner(__name__)
     if dut is None:
         dut = NeptuneDUT()

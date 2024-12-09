@@ -34,8 +34,12 @@ class MonitorableDUT(microcotb.dut.DUT):
     '''
     VCDScope = 'dut'
     def __init__(self, 
-                 name:str='MONDUT'):
+                 name:str='MONDUT',
+                 state_change_callback=None):
         super().__init__(name)
+        
+        self.state_change_callback = state_change_callback
+        
         self._write_test_vcds_to_dir = None
         self._write_vcd_enable = False
         self._is_monitoring = False
@@ -43,6 +47,8 @@ class MonitorableDUT(microcotb.dut.DUT):
         self.events_of_interest_per_test = dict()
         self._last_state_cache = StateCache()
         self._sub_fields = dict()
+        self._watch_for_callbacks = dict()
+        self._watch_for_handler = None
     
     
     # might wish to override (probably)
@@ -69,7 +75,27 @@ class MonitorableDUT(microcotb.dut.DUT):
     def is_monitoring(self, set_to:bool):
         self._is_monitoring = True if set_to else False
         self.changed_monitoring()
-            
+    
+    def _watch_for_triggered(self, stch:StateChangeReport):
+        for name, cb in self._watch_for_callbacks.items():
+            if stch.has(name):
+                cb(name, stch.get(name), stch)
+    
+    def watch_for_state(self, io_name:str, callback):
+        if callback is None: 
+            # erasing
+            if io_name in self._watch_for_callbacks:
+                del self._watch_for_callbacks[io_name]
+                if not len(self._watch_for_callbacks):
+                    self._watch_for_handler = None 
+                    
+            return 
+        self._watch_for_handler = self._watch_for_triggered
+        self._watch_for_callbacks[io_name] = callback
+        
+    
+    
+    
     def changed_monitoring(self):
         if self._is_monitoring:
             SystemTime.ResetTime = TimeValue(1, TimeValue.BaseUnits)
@@ -126,7 +152,14 @@ class MonitorableDUT(microcotb.dut.DUT):
     def queued_state_changes(self) -> list:
         return self._queued_state_changes    
     
+    def add_subfields_and_queue_state_change(self, atTime:TimeValue, report:StateChangeReport):
+        self.add_subfields_to_report(report)
+        self.queue_state_change(atTime, report)
+        
     def queue_state_change(self, atTime:TimeValue, report:StateChangeReport):
+        self._queued_state_changes.append(tuple([atTime, report]))
+        
+    def add_subfields_to_report(self, report:StateChangeReport):
         for name in report.changed():
             if name in self._sub_fields:
                 #last_val = getattr(self, name).last_value_as_array
@@ -136,14 +169,25 @@ class MonitorableDUT(microcotb.dut.DUT):
                 bin_str = io.port.value_as_array(v)
                 
                 for sf in self._sub_fields[name]:
-                    report.add_change(sf.name, int(sf.out_of_array(bin_str)))
+                    cur_v = int(sf.out_of_array(bin_str))
+                    if not self.state_cache.has(sf.name)\
+                        or self.state_cache.get(sf.name) != cur_v:
+                        self.state_cache.set(sf.name, cur_v)
+                        report.add_change(sf.name, cur_v)
                     
-                #print(f'LV {name} {report.all_changes()}')
-        self._queued_state_changes.append(tuple([atTime, report]))
-        
+    
     def append_state_change(self, stch:StateChangeReport):
-        self.queue_state_change(SystemTime.current().clone(), stch)
+        self.add_subfields_and_queue_state_change(SystemTime.current().clone(), stch)
+        self.trigger_all_state_callbacks(stch)
         
+    def trigger_all_state_callbacks(self, stch:StateChangeReport):
+        if self.state_change_callback:
+            cb = self.state_change_callback 
+            cb(stch)
+        if self._watch_for_handler:
+            cb = self._watch_for_handler
+            cb(stch)
+            
     def store_queued_events_as_group(self, group_name:str):
         self.events_of_interest_per_test[group_name] = self.get_queued_state_changes()
         
@@ -156,7 +200,7 @@ class MonitorableDUT(microcotb.dut.DUT):
             self._log.info("Test unit startup -- writing VCDs, get initial state")
             
             for report in self.vcd_initial_state_reports():
-                self.queue_state_change(TimeValue(0, TimeValue.BaseUnits), report)
+                self.add_subfields_and_queue_state_change(TimeValue(0, TimeValue.BaseUnits), report)
                 
                 
             

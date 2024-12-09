@@ -112,6 +112,9 @@ class Port:
         self._last_value = v
         self.signal_write(v)
         # print(f"WCH {self._last_value}")
+    def do_force_update_last_value(self, v):
+        # only for subclasses
+        self._last_value = v
 
 
 class IOPort(Port):

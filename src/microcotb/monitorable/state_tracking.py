@@ -12,30 +12,59 @@ class StateChangeReport:
     def __init__(self):
         self._changed_ports = dict()
         self._num_changes = 0
+    def changed(self):
+        '''
+            return a list of names of things that have changed
+        '''
+        return list(self._changed_ports.keys())     
+    def all_changes(self):
+        '''
+            returns a list of tuples of (name, current_value)
+        '''
+        return list(self._changed_ports.items())
+    def get(self, name:str):
+        '''
+            returns the value for the 'name' item 
+        '''
+        if not self.has(name):
+            return None
+        return self._changed_ports[name]
+    def has(self, name:str):
+        '''
+            return whether this report has a value for 'name'
+        '''
+        return name in self._changed_ports
+    
     def add_change(self, pname:str, pvalue:int):
+        '''
+            used internally to add a new changed value.
+        '''
         self._changed_ports[pname] = pvalue
         setattr(self, pname, pvalue)
         self._num_changes += 1
         return self
-    def changed(self):
-        return list(self._changed_ports.keys())     
-    def all_changes(self):
-        return list(self._changed_ports.items())
-    def get(self, name:str):
-        return self._changed_ports[name]
     def __len__(self):
         return len(self._changed_ports)
     def __repr__(self):
-        return f'<StateChangeReport with {len(self._changed_ports)} (in {self._num_changes}) changes>'
+        num_changed_io = len(self._changed_ports)
+        if self._num_changes > num_changed_io:
+            # some changes were overwritten here
+            return f'<StateChangeReport with {num_changed_io} (in {self._num_changes}) changes>'
+        return f'<StateChangeReport with {num_changed_io} changes>'
     
     def __str__(self):
         outlist = []
         for k,v in self._changed_ports.items():
-            outlist.append(f'{k} = {hex(v)}')
+            outlist.append(f'{k} = {hex(v)} ({bin(v)})')
         if not len(outlist):
             return 'StateChangeReport: no changes'
-        sep = '\n'
-        return f"StateChangeReport ({len(outlist)} ports in {self._num_changes} events):\n{sep.join(outlist)}"
+        
+        num_changed_io = len(outlist)
+        outdeets = '\n  '.join(outlist)
+        addenda = ''
+        if self._num_changes > num_changed_io:
+            addenda = f' in {self._num_changes}'
+        return f"StateChangeReport ({num_changed_io}{addenda}):\n{outdeets}"
             
   
   
