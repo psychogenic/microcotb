@@ -13,8 +13,8 @@ https://github.com/psychogenic/tt04-neptune/blob/main/src/test.py
 from microcotb.clock import Clock
 from microcotb.triggers import Timer, ClockCycles # RisingEdge, FallingEdge, Timer, ClockCycles
 import microcotb as cocotb
-OnlyLast = True
-DefaultToggleTime = 0.61
+OnlyLast = False
+DefaultToggleTime = 0.515
 displayNotes = {
             'NA':     0b00000010, # -
             'A':      0b11101110, # A
@@ -38,7 +38,7 @@ displayProx = {
 SegmentMask = 0xFF
 ProxSegMask = 0xFE
 
-class ClockConfig:
+class ClockFreq:
     Clock1KHz = 0
     Clock2KHz = 1
     Clock4KHz = 2
@@ -48,61 +48,60 @@ class ClockConfig:
     Clock40KHz = 6
     Clock60KHz = 7
     
-SelectedClockFreq = ClockConfig.Clock4KHz
+SelectedClockFreq = ClockFreq.Clock4KHz
     
 ClockConfig = {
     
-    ClockConfig.Clock1KHz: {
-            'config': ClockConfig.Clock1KHz,
+    ClockFreq.Clock1KHz: {
+            'config': ClockFreq.Clock1KHz,
             'freq': 1000,
         },
-    ClockConfig.Clock2KHz: {
+    ClockFreq.Clock2KHz: {
         
-            'config': ClockConfig.Clock2KHz,
+            'config': ClockFreq.Clock2KHz,
             'freq': 2000,
         },
     
-    ClockConfig.Clock4KHz: {
+    ClockFreq.Clock4KHz: {
         
-            'config': ClockConfig.Clock4KHz,
+            'config': ClockFreq.Clock4KHz,
             'freq': 4000,
         },
-    ClockConfig.Clock10KHz: {
+    ClockFreq.Clock10KHz: {
         
-            'config': ClockConfig.Clock10KHz,
+            'config': ClockFreq.Clock10KHz,
             'freq': 10000,
         },
-    ClockConfig.Clock40KHz: {
+    ClockFreq.Clock40KHz: {
         
-            'config': ClockConfig.Clock40KHz,
+            'config': ClockFreq.Clock40KHz,
             'freq': 40000,
         }
 }
 
-async def reset(dut):
+async def reset(dut, clock_freq=SelectedClockFreq):
     dut._log.info(f"reset(dut)")
     dut.display_single_enable.value = 0
     dut.display_single_select.value = 0
     dut.rst_n.value = 0
-    dut.clk_config.value = ClockConfig[SelectedClockFreq]['config']
+    dut.clk_config.value = ClockConfig[clock_freq]['config']
     dut._log.info("hold in reset")
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 1)
     
     dut._log.info("reset done")
    
     
-async def startup(dut):
+async def startup(dut, clock_freq=SelectedClockFreq):
     dut._log.info("starting clock")
     
-    freqHz = ClockConfig[SelectedClockFreq]['freq']
+    freqHz = ClockConfig[clock_freq]['freq']
     
     periodUs = int(1e6/freqHz)
     clock = Clock(dut.clk, periodUs, units="us")
     cocotb.start_soon(clock.start())
     dut._log.info(f"resetting, with system clock @ {freqHz}Hz")
-    await reset(dut)
+    await reset(dut, clock_freq)
     dut.input_pulse.value = 0
             
 async def getDisplayValues(dut):
@@ -149,9 +148,9 @@ async def note_toggle(dut, freq, delta=0, msg="", toggleTime=DefaultToggleTime, 
     
     
 
-async def note_e(dut, eFreq=330, delta=0, msg=""):
+async def note_e(dut, eFreq=330, toggleTime=DefaultToggleTime, delta=0, msg=""):
     dut._log.info(f"E @ {eFreq} delta {delta}")
-    dispValues = await note_toggle(dut, freq=eFreq, delta=delta, msg=msg);
+    dispValues = await note_toggle(dut, freq=eFreq, toggleTime=toggleTime, delta=delta, msg=msg)
     note_target = (displayNotes['E'] & SegmentMask)
     assert dispValues[1] == note_target, f"Note E FAIL: {dispValues[1]} != {note_target}"
     dut._log.info(f"Note E @ {eFreq} pass ({bin(dispValues[1])})")
@@ -192,7 +191,8 @@ async def note_a(dut, delta=0, msg="", toggleTime=DefaultToggleTime, skip_reset:
     aFreq = 110
     
     dut._log.info(f"A delta {delta}")
-    dispValues = await note_toggle(dut, freq=aFreq, delta=delta, msg=msg, toggleTime=toggleTime, skip_reset=skip_reset);
+    dispValues = await note_toggle(dut, freq=aFreq, delta=delta, msg=msg, 
+                                   toggleTime=toggleTime, skip_reset=skip_reset);
     
     note_target = (displayNotes['A'] & SegmentMask)
     assert dispValues[1] == note_target, f"Note A FAIL: {dispValues[1]} != {note_target}"
@@ -200,8 +200,17 @@ async def note_a(dut, delta=0, msg="", toggleTime=DefaultToggleTime, skip_reset:
     return dispValues
 
 @cocotb.test(skip=OnlyLast)
-async def note_a_exact(dut):
-    dispValues = await note_a(dut, delta=0, msg="A exact")
+@cocotb.parametrize(
+    ("clocking", [
+        ClockFreq.Clock1KHz,
+        ClockFreq.Clock2KHz,
+        ClockFreq.Clock4KHz
+        ]), 
+)
+async def note_a_exact(dut, clocking):
+    # handle startup/reset ourselves, so we can play with clocking
+    await startup(dut, clocking)
+    dispValues = await note_a(dut, delta=0, toggleTime=DefaultToggleTime*2, msg="A exact", skip_reset=True)
     
     target_value =  (displayProx['exact'] & ProxSegMask)
     assert dispValues[0] == target_value, f"exact fail {dispValues[0]} != {target_value}"
@@ -231,14 +240,14 @@ async def note_b(dut, delta=0, msg=""):
     
 @cocotb.test(skip=OnlyLast)
 async def note_fatE_lowfar(dut):
-    dispValues = await note_e(dut, eFreq=83, delta=-4, msg="fat E low/far")
+    dispValues = await note_e(dut, eFreq=83, toggleTime=DefaultToggleTime*2, delta=-4, msg="fat E low/far")
     assert (dispValues[0] == (displayProx['lowfar'] & ProxSegMask)) or (dispValues[0] == (displayProx['exact'] & ProxSegMask))
     
     
  
 @cocotb.test(skip=OnlyLast)
 async def note_fatE_exact(dut):
-    dispValues = await note_e(dut, eFreq=83, delta=-1, msg="fat E -1Hz")
+    dispValues = await note_e(dut, eFreq=83, toggleTime=DefaultToggleTime*2, delta=-1, msg="fat E -1Hz")
     assert dispValues[0] == (displayProx['exact'] & ProxSegMask)
     
 @cocotb.test(skip=OnlyLast)
