@@ -16,6 +16,10 @@ class SimpleIO(DUT):
     
     # override
     def append_state_change(self, stch:StateChangeReport):
+        # this override is here to ensure we don't just
+        # spend our time storing state changes in mem
+        # for a user who's not caring about VCDs and 
+        # won't flush them out.
         if self.write_vcd_enabled or self.always_queue_reports:
             super().append_state_change(stch)
         else:

@@ -5,7 +5,7 @@ import os
 
 RunnerModuleName = None
 
-__version__ = "0.6.2"
+__version__ = "0.7.2"
 
 def start_soon(c):
     pass
