@@ -12,6 +12,8 @@ class PinWrapper(WithValue):
         self._pin = pin 
         self._name = name
         
+    def __hash__(self)->int:
+        return hash(self._name)
     @property 
     def name(self):
         return self._name
