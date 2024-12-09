@@ -83,8 +83,8 @@ class Runner:
             try:
                 log.warning(f"*** Running Test {test_count+1}/{num_tests}: {nm} ***") 
                 t_start_s = time.runtime_start()
-                dut.testing_unit_start(test)
                 if not test.skip:
+                    dut.testing_unit_start(test)
                     test.run(dut)
                     if test.expect_fail: 
                         num_failures += 1
@@ -113,7 +113,7 @@ class Runner:
             if shortest_interval is None:
                 log.warning('No clocks in test')
             else:
-                if test.real_time:
+                if test.real_time and not test.skip:
                     steps_per_sec = (1/shortest_interval.time_in('sec'))/test.real_time
                     log.info(f'Ran @ {steps_per_sec:.2f} steps/s')
                     steps_p_sec_tot += steps_per_sec
