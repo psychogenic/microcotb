@@ -109,17 +109,21 @@ class Runner:
                     raise e
                 
             test.real_time = time.runtime_delta_secs(t_start_s)
+            test.run_time = SystemTime.current()
+            if test.skip: 
+                log.info(f'{test.name} skipped')
+                continue 
+            
             shortest_interval = Clock.get_shortest_event_interval()
             if shortest_interval is None:
                 log.warning('No clocks in test')
             else:
-                if test.real_time and not test.skip:
+                if test.real_time:
                     steps_per_sec = (1/shortest_interval.time_in('sec'))/test.real_time
                     log.info(f'Ran @ {steps_per_sec:.2f} steps/s')
                     steps_p_sec_tot += steps_per_sec
                     num_stepps_avged += 1
-            test.run_time = SystemTime.current()
-            dut.testing_unit_done(test)
+                dut.testing_unit_done(test)
             
         all_tests_runs_time = time.runtime_delta_secs(all_tests_start_s)
         dut.testing_done()
