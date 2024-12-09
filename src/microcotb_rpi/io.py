@@ -5,7 +5,7 @@ Created on Dec 7, 2024
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
 from microcotb.monitorable.io import IO, MonitorableIO
-
+from microcotb.types.ioport import DefaultDebounceUSecs
 import microcotb.log as logging
 log = logging.getLogger(__name__)
 
@@ -19,12 +19,7 @@ except ModuleNotFoundError as e:
     raise e
     
 import datetime 
-import time
  
-
-DebounceUSecs = 0
-ResilientReads = 4
-
 
 
 class ConfigurableDirectionIO(IO):
@@ -32,41 +27,32 @@ class ConfigurableDirectionIO(IO):
     def oe_value_change(self, oe:IO, current_value:int, new_value:int):
         pass
 
-class RPiOE(IO):
-    def __init__(self, name:str, width:int, managed_io:ConfigurableDirectionIO):
-        super().__init__(f'{name}_oe', width, self.current_value, self.set_current_value)
-        self._managed_name = name
-        self._current_value = 0
-        self._managed_io = managed_io
-        self._write_notif_callback = None 
-        
-    def managed_port_name(self):
-        return self._managed_name
-        
-    def current_value(self) -> int:
-        return self._current_value
-    
-    def set_current_value(self, set_to:int):
-        old_val = self._current_value
-        self._current_value = set_to 
-        self._managed_io.oe_value_change(self, old_val, set_to)
-        
-        
 
 class RPiIO(MonitorableIO):
     
     EdgeEvent = EdgeEvent
     EventType = EdgeEvent.Type
-    DefaultEventWaitTimeDelta = datetime.timedelta(microseconds=DebounceUSecs+1)
+    DefaultEventWaitTimeDelta = datetime.timedelta(microseconds=DefaultDebounceUSecs+1)
     def __init__(self, name:str, pin_list:list, chipname:str="/dev/gpiochip0"):
         width = len(pin_list)
         super().__init__(name, width, self._get_line_values, self._set_line_values)
+        
         self.oe = RPiOE(name, width, self)
+        oe_value = self.oe.value
+        
+        # I'm getting really bouncy lines
+        # so far, testing shows debounceUSecs 0, but 
+        # in one set of tests I needed a 
+        # resilientDebounceTries 3 or 4 to be good...
+        # but it works with 0 now? wtf? well, can't complain
+        self.port.debounceUSecs = 0 
+        self.port.resilientDebounceTries = 0
+        
         self._chipname = chipname
         self._pin_ids = pin_list
-        oe_value = self.oe.value
         self._config = dict()
         self._lineoffset_to_bitpos = {}
+        
         for i in range(width):
             self._config[self._pin_ids[i]] = self._get_line_settings_config(int(oe_value[i]))
             self._lineoffset_to_bitpos[self._pin_ids[i]] = i
@@ -118,39 +104,12 @@ class RPiIO(MonitorableIO):
         
         return gpiod.LineSettings(
                             direction=Direction.INPUT, edge_detection=Edge.BOTH,
-                            debounce_period=datetime.timedelta(microseconds=DebounceUSecs))
-    def _get_line_resilient(self):
-        attempt = 0
-        vo = list(range(ResilientReads))
-        while vo.count(vo[0]) != len(vo):
-            if attempt:
-                if attempt > 1:
-                    log.warning(f'resilient get_line failed {attempt} times (last {vo})')
-                else:
-                    log.debug(f'resilient get_line failed {attempt} times (last {vo})')
-            attempt += 1
-            for a in range(ResilientReads):
-                
-                v = 0
-                cur_vals = self.line_request.get_values()
-                for i in range(len(cur_vals)):
-                    if cur_vals[i].value:
-                        v |= (1 << i)
-                vo[a] = v
-                
-                time.sleep(DebounceUSecs/(2*1e6))
-                
-        return vo[0]
+                            debounce_period=datetime.timedelta(microseconds=self.port.debounceUSecs))
         
     def _get_line_values(self):
-        # time.sleep(DebounceUSecs/1e6)
-        if ResilientReads:
-            return self._get_line_resilient()
         v = 0
-        cur_vals = self.line_request.get_values()
-        for i in range(len(cur_vals)):
-            if cur_vals[i].value:
-                v |= (1 << i)
+        for bitV in reversed(self.line_request.get_values()):
+            v = v * 2 + bitV.value # Supposedly faster than shifting
         return v
     
     def _set_line_values(self, set_to:int):
@@ -182,5 +141,25 @@ class RPiIO(MonitorableIO):
         
         self.line_request.reconfigure_lines(new_config)
         
-                
+
+class RPiOE(IO):
+    def __init__(self, name:str, width:int, managed_io:ConfigurableDirectionIO):
+        super().__init__(f'{name}_oe', width, self.current_value, self.set_current_value)
+        self._managed_name = name
+        self._current_value = 0
+        self._managed_io = managed_io
+        self._write_notif_callback = None 
+        
+    def managed_port_name(self):
+        return self._managed_name
+        
+    def current_value(self) -> int:
+        return self._current_value
+    
+    def set_current_value(self, set_to:int):
+        old_val = self._current_value
+        self._current_value = set_to 
+        self._managed_io.oe_value_change(self, old_val, set_to)
+        
+             
                 

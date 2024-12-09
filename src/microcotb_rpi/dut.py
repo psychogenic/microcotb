@@ -4,8 +4,8 @@ Created on Dec 7, 2024
 @author: Pat Deegan
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
-import time
-from .io import RPiIO, DebounceUSecs
+import microcotb.utils.tm as time
+from .io import RPiIO
 from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
 
@@ -18,7 +18,6 @@ from microcotb.types.ioport import set_range_direction_python, \
     set_range_direction_verilog, range_direction_is_verilog
 
 import microcotb.log as logging
-from microcotb_rpi.io import RPiOE
 
 log = logging.getLogger(__name__)
 class Direction:

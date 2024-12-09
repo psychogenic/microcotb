@@ -7,6 +7,7 @@ Created on Nov 20, 2024
 
 from microcotb.types.range import Range
 import microcotb.log as logging
+import microcotb.utils.tm as time
 from microcotb.types.logic_array import LogicArray
 log = logging.getLogger(__name__)
 
@@ -21,9 +22,11 @@ def set_range_direction_python():
 def range_direction_is_verilog():
     global RangeDirection
     return RangeDirection == Range.RANGE_DOWN
-    
+DefaultResilientDebounceTries = 0
+DefaultDebounceUSecs = 0
     
 class Port:
+    
     def __init__(self, name:str, width:int, read_signal_fn=None, write_signal_fn=None):
         self.name = name 
         self.width = width
@@ -31,6 +34,8 @@ class Port:
         self.signal_write = write_signal_fn
         self._last_value = 0
         self._fstr = '{v:0' + str(self.width) + 'b}'
+        self.resilientDebounceTries = DefaultResilientDebounceTries
+        self.debounceUSecs = DefaultDebounceUSecs
     
     @property 
     def last_value(self) -> int:
@@ -103,10 +108,27 @@ class Port:
             return NotImplemented
         return self.signal_read() == other.signal_read()
     
+    def _do_read_resilient(self):
+        attempt = 0
+        vo = list(range(self.resilientDebounceTries))
+        while vo.count(vo[0]) != len(vo):
+            if attempt:
+                if attempt > 1:
+                    log.info(f'resilient read {attempt} times (last {vo})')
+                else:
+                    log.debug(f'resilient read {attempt} times (last {vo})')
+            attempt += 1
+            for a in range(self.resilientDebounceTries):
+                vo[a] = self.signal_read()            
+                time.sleep(self.debounceUSecs/(2*1e6))
+                
+        return vo[0]
     
     def do_read(self):
-        self._last_value = self.signal_read()
-        # print(f"RCH {self._last_value}")
+        if self.resilientDebounceTries:
+            self._last_value = self._do_read_resilient()
+        else:
+            self._last_value = self.signal_read()
         return self._last_value 
     def do_write(self, v):
         self._last_value = v
