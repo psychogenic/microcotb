@@ -160,4 +160,12 @@ class DUT(MonitorableDUT):
                 
             
             
+    def __repr__(self):
+        availNames = []
+        for io in self.available_io():
+            availNames.append(io.name)
+        if not len(availNames):
+            return f'<DUT {self.name}>'
+        return f'<DUT {self.name} ({",".join(availNames)})>'
+    
             

@@ -5,6 +5,7 @@ Created on Dec 7, 2024
 @copyright: Copyright (C) 2024 Pat Deegan, https://psychogenic.com
 '''
 from microcotb.monitorable.io import IO, MonitorableIO
+from microcotb.dut import SliceWrapper
 from microcotb.types.ioport import DefaultDebounceUSecs
 import microcotb.log as logging
 log = logging.getLogger(__name__)
@@ -141,6 +142,18 @@ class RPiIO(MonitorableIO):
         
         self.line_request.reconfigure_lines(new_config)
         
+    
+    def __setattr__(self, name:str, value):
+        # these are special ports in that they have OE attributes
+        # that are ports themselves... allow for the same 
+        # convenince of doing port.oe = XX to set the sub-port value
+        if hasattr(self, name):
+            port = getattr(self, name)
+            if isinstance(port, (IO, SliceWrapper)):
+                port.value = value 
+                return
+        
+        super().__setattr__(name, value)
 
 class RPiOE(IO):
     def __init__(self, name:str, width:int, managed_io:ConfigurableDirectionIO):

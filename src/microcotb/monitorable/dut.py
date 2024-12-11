@@ -305,4 +305,3 @@ class MonitorableDUT(microcotb.dut.DUT):
             self._sub_fields[source.name] = []
         self._sub_fields[source.name].append(rv)
         return rv
-    

@@ -77,6 +77,8 @@ class IOInterface:
                 self._avail_io.append(value)
         
         super().__setattr__(name, value)
+        
+    
 
 
 
@@ -103,6 +105,14 @@ class DUT(IOInterface):
     
         
         
+    
+    def __repr__(self):
+        availNames = []
+        for io in self.available_io():
+            availNames.append(io.name)
+        if not len(availNames):
+            return f'<DUT {self.name}>'
+        return f'<DUT {self.name} ({",".join(availNames)})>'
     
         
         

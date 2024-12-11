@@ -70,7 +70,13 @@ class IO(LogicObject):
     def name(self) -> str:
         return self.port.name
         
-    
+    def invert(self):
+        self.value = ~self 
+        
+    def clock(self, n_times:int=1):
+        for _i in range(n_times):
+            self.invert()
+            self.invert()
     def __repr__(self):
         val = hex(int(self.value)) if self.port.is_readable  else ''
         return f'<IO {self.name} {val}>'
@@ -79,6 +85,11 @@ class IO(LogicObject):
         if self.port.is_readable:
             return int(self.value)
         return None
+    
+    
+    def __invert__(self):
+        mv = self.max_value
+        return ~(mv & int(self)) & mv
     
     def __str__(self):
         return str(self.value)

@@ -102,7 +102,7 @@ class Port:
     
     def get_const(self) -> bool:
         return False
-    
+        
     def __eq__(self, other) -> bool:
         if not isinstance(other, Port):
             return NotImplemented
