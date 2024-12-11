@@ -18,7 +18,7 @@ from microcotb.sub_signals import NoopSignal, Wire
 
 class IOInterface:
     def __init__(self):
-        self._avail_io = [] 
+        self._avail_io = dict()
     
     @classmethod
     def new_slice_attribute(cls, name:str, source:IO, idx_or_start:int, slice_end:int=None):
@@ -46,17 +46,20 @@ class IOInterface:
     
     def available_io(self, types_of_interest=None):
         # get anything that's IO or IO-based/derived
-        if self._avail_io is None:
+        if self._avail_io is None or not len(self._avail_io):
+            self._avail_io = dict()
             # do a search
-            self._avail_io = \
+            attrs = \
                 list(filter(lambda x: isinstance(x, (IO, SliceWrapper)), 
                                map(lambda a: getattr(self, a), 
                                    filter(lambda g: not g.startswith('_'), 
                                           sorted(dir(self))))))
+            for at in attrs:
+                self._avail_io[at.name] = at
         if types_of_interest is None:
-            return self._avail_io
+            return list(self._avail_io.values())
         
-        return list(filter(lambda x: isinstance(x, types_of_interest), self._avail_io))
+        return list(filter(lambda x: isinstance(x, types_of_interest), self._avail_io.values()))
     
     def available_ports(self):
         '''
@@ -73,8 +76,12 @@ class IOInterface:
                 return
         elif isinstance(value, (IO, SliceWrapper)):
             # don't know this yet, and it's IO
+            print(value.name)
             if hasattr(self, '_avail_io'):
-                self._avail_io.append(value)
+                if value.name not in self._avail_io:
+                    self._avail_io[value.name] = value
+                else:
+                    print(f"ALREADY HAS A {value.name}")
         
         super().__setattr__(name, value)
         
