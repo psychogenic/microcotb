@@ -83,12 +83,7 @@ def main():
     
     dut = ShamanDUT()
     
-    if not OutputVCD:
-        # no longer needed??!
-        pass
-        #dut._log.warn("No monitoring/vcd -- slowing system down cause my project sux")
-        #SystemTime.ForceSleepOnAdvance = 0.002
-    else:
+    if OutputVCD:
         dut._log.warn("Writing VCDs")
         dut.is_monitoring = True
         dut.write_test_vcds_to_dir = '/tmp'
