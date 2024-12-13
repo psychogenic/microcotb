@@ -70,6 +70,7 @@ class DUT(BaseDUT):
         self.asynchronous_events = True
         self._serial = None
         self._stream = None
+        self._use_sync_cd = False
         super().__init__(name, auto_discover)
     
     @property 
