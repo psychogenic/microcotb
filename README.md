@@ -13,8 +13,9 @@ How do you get hardware-in-the-loop with [cocotb](https://cocotb.org)?  This is 
   * on the desktop, talking to projects on **any external chip**, *through* an FPGA over USB
   
 
+There are a number of [examples available here](https://github.com/psychogenic/microcotb/tree/main/src/examples).  The [raspi](https://github.com/psychogenic/microcotb/tree/main/src/examples/raspi) contains examples used on a Raspberry Pi 5, there's also [rp2040](https://github.com/psychogenic/microcotb/tree/main/src/examples/rp2040) and code for use through my FPGA "Simple USB Bridge".  The testbench scripts are short, relating only to the particulars of launching the tests on that platform, since all the samples use the *same set of tests* (which is one of the points of all this), and those are all in [common](https://github.com/psychogenic/microcotb/tree/main/src/examples/common).
 
-This library will run on an [RP2040](https://www.raspberrypi.com/products/rp2040/) and really anything that runs [micropython](https://www.micropython.org/) or full [Python](https://www.python.org/).
+So this library will run the same unit tests on an [RP2040](https://www.raspberrypi.com/products/rp2040/) and really anything that runs [micropython](https://www.micropython.org/) or full [Python](https://www.python.org/).
 
 It will also run on the desktop--but then so will cocotb, so what's the point?  The point is getting a simplified manner of extending things to **talk to real hardware**.  See [simple_usb_bridge](https://github.com/psychogenic/microcotb/tree/main/src/microcotb_sub/README.md) for an example of using a USB bridge to an FPGA.
 
@@ -22,7 +23,7 @@ I've used this to get deep inspection VCD waveforms from modules in FPGAs while 
 
 ![VCD of SPI flash FIFO](https://raw.githubusercontent.com/psychogenic/microcotb/refs/heads/main/images/psyreader_vcd_from_fpga.png)
 
-I've put up a walkthrough of hardware-in-the-loop testing with cocotb testbenches, showing how to run it using a raspberry Pi 5, an RP2040 and an FPGA:
+I've put up a walkthrough of hardware-in-the-loop testing with cocotb testbenches, showing how to run it using a raspberry Pi 5, an RP2040 and an FPGA, and include some details on inspecting a design's internal signals while it's hooked up to external circuitry:
 
 [![From Sim to Silicon](https://img.youtube.com/vi/g8cmUiP3KGQ/0.jpg)](https://www.youtube.com/watch?v=g8cmUiP3KGQ)
 
