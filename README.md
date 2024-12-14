@@ -22,6 +22,11 @@ I've used this to get deep inspection VCD waveforms from modules in FPGAs while 
 
 ![VCD of SPI flash FIFO](https://raw.githubusercontent.com/psychogenic/microcotb/refs/heads/main/images/psyreader_vcd_from_fpga.png)
 
+I've put up a walkthrough of hardware-in-the-loop testing with cocotb testbenches, showing how to run it using a raspberry Pi 5, an RP2040 and an FPGA:
+
+[![From Sim to Silicon](https://img.youtube.com/vi/g8cmUiP3KGQ/0.jpg)](https://www.youtube.com/watch?v=g8cmUiP3KGQ)
+
+
 
 The backend will do whatever you want--run on the RP2040 directly, or talk over a serial connection or USB or ethernet, etc.  Whereas the front end provides a cocotb v2 compatible way to detect and run `@cocotb.test()` units just like you did during simulation, *without modifying them*.
 
