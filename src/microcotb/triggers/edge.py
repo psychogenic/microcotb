@@ -10,7 +10,7 @@ from microcotb.time.value import TimeValue
 from microcotb.time.system import SystemTime
 
 class Edge(Awaitable):
-    DebugTraceLoopCount = 2000
+    DebugTraceLoopCount = 0
     def __init__(self, signal):
         super().__init__()
         self.signal = signal
@@ -45,17 +45,17 @@ class Edge(Awaitable):
         return self.fastest_clock.half_period
     
     def wait_for_conditions(self):
+        step_incr = self.time_increment
         while not self.conditions_met():
-            self._cond_check_count += 1
-            if self.DebugTraceLoopCount is not None and \
-                self._cond_check_count % self.DebugTraceLoopCount == 0:
-                self.logger.debug(f"SystemTime {SystemTime.current()}")
-            incr = self.time_increment
-            if incr is not None:
-                SystemTime.advance(incr)
+            if self.DebugTraceLoopCount:
+                self._cond_check_count += 1
+                if self._cond_check_count % self.DebugTraceLoopCount == 0:
+                    self.logger.debug(f"SystemTime {SystemTime.current()}")
+            if step_incr is not None:
+                SystemTime.advance(step_incr)
             
             
-        if self.DebugTraceLoopCount is not None:
+        if self.DebugTraceLoopCount:
             self.logger.debug(f"Done at {SystemTime.current()}")
         return
     
@@ -88,18 +88,14 @@ class RisingEdge(Edge):
     def prepare_for_wait(self):
         self.initial_state = self.signal_value
         self.primed = False if self.initial_state else True
-        # print(f"Initial state: {self.initial_state} and primed {self.primed}")
         return 
     
     def conditions_met(self):
         if self.primed:
-            sval = self.signal_value
-            if sval:
-                # print(f"SIG VAL TRUE {sval}")
+            if self.signal_value:
                 return True
         else:
             if self.signal_value == 0:
-                # print("PRIMED")
                 self.primed = True 
             
             

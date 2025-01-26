@@ -126,7 +126,18 @@ More details on this in the [SUB section](https://github.com/psychogenic/microco
 Using the [SUB](https://github.com/psychogenic/microcotb/tree/main/src/microcotb_sub), to talk to projects through an FPGA over USB (either within the FPGA or an external chip *through* the FPGA) things are slower than in desktop sim, but still 10x faster than on the RP2040. 
 
 
-On the Pico, tests run successfully but, since we are manually toggling the clock(s) behind the scenes from [micropython](https://micropython.org/) SDK, the cost of one step is pretty expensive.
+On the Pico, tests run successfully but, since we are manually toggling the clock(s) behind the scenes from [micropython](https://micropython.org/) SDK, the cost of one step is pretty expensive.  Awaiting `RisingEdge` and `FallingEdge` are slower still, by a good margin (like 20% or something)--the advantage of these are:
+
+  * simplicity: it's a single `await RisingEdge(dut.target_signal)` vs a loop where you manually clock and check the signal
+  
+  * multi-clock support: no matter how many clocks are configured in the system, they'll all tick as appropriate.
+  
+but if you have a need for speed, and have a single clock source, you might be better off doing something like
+
+```
+while not dut.target_signal.value:
+    await ClockCycles(dut.clk, 1)
+```
 
 A "step" has a duration of 1/2 the (fastest) started clock's period, in simulator time.  On the RP2040, in real time this one step winds up consumming about 1.6ms.
 

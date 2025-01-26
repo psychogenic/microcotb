@@ -24,6 +24,7 @@ from microcotb.time.system import SystemTime
 def main(dut:TinyTapeoutDUT = None):
     TimeValue.ReBaseStringUnits = True
     logging.basicConfig(level=logging.INFO)
+    
     runner = cocotb.get_runner(__name__)
     if dut is None:
         dut = TinyTapeoutDUT('FactoryTest')
