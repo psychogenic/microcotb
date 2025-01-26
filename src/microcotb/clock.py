@@ -108,6 +108,7 @@ class Clock:
             self.toggle()
             self.next_toggle += self.half_period
             did_clock = True
+        
             
         return did_clock
         

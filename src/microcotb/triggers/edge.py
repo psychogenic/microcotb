@@ -92,7 +92,7 @@ class RisingEdge(Edge):
     
     def conditions_met(self):
         if self.primed:
-            if self.signal_value:
+            if self.signal_value > 0:
                 return True
         else:
             if self.signal_value == 0:
@@ -117,7 +117,7 @@ class FallingEdge(Edge):
             if self.signal_value == 0:
                 return True
         else:
-            if self.signal_value:
+            if self.signal_value > 0:
                 self.primed = True
             
             
