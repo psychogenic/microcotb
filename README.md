@@ -126,24 +126,34 @@ More details on this in the [SUB section](https://github.com/psychogenic/microco
 Using the [SUB](https://github.com/psychogenic/microcotb/tree/main/src/microcotb_sub), to talk to projects through an FPGA over USB (either within the FPGA or an external chip *through* the FPGA) things are slower than in desktop sim, but still 10x faster than on the RP2040. 
 
 
-On the Pico, tests run successfully but, since we are manually toggling the clock(s) behind the scenes from [micropython](https://micropython.org/) SDK, the cost of one step is pretty expensive.  Awaiting `RisingEdge` and `FallingEdge` are slower still, by a good margin (like 20% or something)--the advantage of these are:
+On the Pico, tests run successfully but, since we are manually toggling the clock(s) behind the scenes from [micropython](https://micropython.org/) SDK, the cost of one step is pretty expensive.  
 
-  * simplicity: it's a single `await RisingEdge(dut.target_signal)` vs a loop where you manually clock and check the signal
-  
-  * multi-clock support: no matter how many clocks are configured in the system, they'll all tick as appropriate.
-  
-but if you have a need for speed, and have a single clock source, you might be better off doing something like
 
-```
-while not dut.target_signal.value:
-    await ClockCycles(dut.clk, 1)
-```
 
 A "step" has a duration of 1/2 the (fastest) started clock's period, in simulator time.  On the RP2040, in real time this one step winds up consumming about 1.6ms.
 
 So, if the simulation had a 1MHz clock and is waiting on a Timer for 1 ms, that will be 1000 clock cycles, or 2000 times the clock signal is toggled, i.e. steps.  Hence, you'll be waiting on this chunk of simulation to complete for over 3 seconds.
 
 On the desktop, a single step is much faster--on the order of 6us on my machine right now, so the same sim would only take about 13ms.  The bottleneck on desktop will always be the hardware bridge you are interacting with to control and observe the hardware, whether its libiio, SWV, plain old serial or whatever.
+
+
+Also of note, awaiting `RisingEdge` and `FallingEdge` are slower still, by a good margin (like 20% or so)--the advantage of these are:
+
+  * simplicity: it's a single `await RisingEdge(dut.target_signal)` vs a loop where you manually clock and check the signal
+  
+  * multi-clock support: no matter how many clocks are configured in the system, they'll all tick as appropriate.
+  
+but if you have a need for speed, and are using a single clock source, you might be better off doing something like
+
+```
+while not dut.target_signal.value:
+    await ClockCycles(dut.clk, 1)
+```
+
+Here's the same set of tests, run with manual loops as above vs using edge triggers, on a RP2040.  You can see the difference in runtime is rather substantial in this testbench
+
+
+![edge trigger costs 20% slowdown](https://raw.githubusercontent.com/psychogenic/microcotb/refs/heads/main/images/ucocotb_edgetrig_cost.png)
 
 
 ## Quickstart
