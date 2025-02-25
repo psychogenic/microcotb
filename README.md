@@ -523,7 +523,7 @@ The first option would be to re-write all the cocotb.test() stuff to use only ui
 
 Rather than do all that work, and have ugly `tt.ui_in.value[5]` stuff everywhere as a bonus, you can extend the DUT class to add in wrappers to these values.
 
-To do this, you just derive a new class from `microcotb.dut.DUT`, create the attributes using `new_bit_attribute` or `new_slice_attribute` (for things like `tt.ui_in[3:1]`).
+To do this, you just derive a new class from `microcotb.dut.DUT`, create the attributes using `add_bit_attribute` or `add_slice_attribute` (for things like `tt.ui_in[3:1]`).
 
 In my neptune case, this looks like:
 
@@ -537,13 +537,13 @@ class DUT(ttboard.cocotb.dut.DUT):
         super().__init__('Neptune')
         self.tt = DemoBoard.get()
         # inputs
-        self.display_single_select = self.new_bit_attribute(self.tt.ui_in, 7)
-        self.display_single_enable = self.new_bit_attribute(self.tt.ui_in, 6)
-        self.input_pulse = self.new_bit_attribute(self.tt.ui_in, 5)
-        self.clk_config = self.new_slice_attribute(self.tt.ui_in, 4, 2) # tt.ui_in[4:2]
+        self.add_bit_attribute('display_single_select', self.tt.ui_in, 7)
+        self.add_bit_attribute('display_single_enable', self.tt.ui_in, 6)
+        self.add_bit_attribute('input_pulse', self.tt.ui_in, 5)
+        self.add_slice_attribute('clk_config', self.tt.ui_in, 4, 2) # tt.ui_in[4:2]
         # outputs
-        self.prox_select = self.new_bit_attribute(self.tt.uo_out, 7)
-        self.segments = self.new_slice_attribute(self.tt.uo_out, 6, 0) # tt.uo_out[6:0]
+        self.add_bit_attribute('prox_select', self.tt.uo_out, 7)
+        self.add_slice_attribute('segments', self.tt.uo_out, 6, 0) # tt.uo_out[6:0]
 ````
 
 Using that class to construct my dut, things like
