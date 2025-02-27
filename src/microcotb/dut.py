@@ -76,7 +76,6 @@ class IOInterface:
                 return
         elif isinstance(value, (IO, SliceWrapper)):
             # don't know this yet, and it's IO
-            print(value.name)
             if hasattr(self, '_avail_io'):
                 if value.name not in self._avail_io:
                     self._avail_io[value.name] = value
